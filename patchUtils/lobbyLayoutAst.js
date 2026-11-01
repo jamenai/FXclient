@@ -98,10 +98,11 @@ function patchHeights(ast) {
     assertSingleNumber(targets.footer.value, 0.02);
     assertSingleNumber(targets.footer.value, 0.01);
     targets.title.value = replaceNumber(targets.title.value, 0.05, `${setting} ? .034 : .05`);
-    targets.teamRow.value = replaceNumber(targets.teamRow.value, 0.06, `${setting} ? .04 : .06`);
-    targets.teamRow.value = replaceNumber(targets.teamRow.value, 0.03, `${setting} ? .02 : .03`);
-    targets.mapRow.value = replaceNumber(targets.mapRow.value, 0.08, `${setting} ? .04 : .08`);
-    targets.mapRow.value = replaceNumber(targets.mapRow.value, 0.03, `${setting} ? .02 : .03`);
+    const needsExtraLobbyHeight = "window.innerWidth < window.innerHeight || window.innerWidth / window.innerHeight > 4";
+    targets.teamRow.value = replaceNumber(targets.teamRow.value, 0.06, `${setting} ? (${needsExtraLobbyHeight} ? .055 : .04) : .06`);
+    targets.teamRow.value = replaceNumber(targets.teamRow.value, 0.03, `${setting} ? (${needsExtraLobbyHeight} ? .025 : .02) : .03`);
+    targets.mapRow.value = replaceNumber(targets.mapRow.value, 0.08, `${setting} ? (${needsExtraLobbyHeight} ? .06 : .04) : .08`);
+    targets.mapRow.value = replaceNumber(targets.mapRow.value, 0.03, `${setting} ? (${needsExtraLobbyHeight} ? .025 : .02) : .03`);
     targets.footer.value = replaceNumber(targets.footer.value, 0.02, `${setting} ? .016 : .02`);
     targets.footer.value = replaceNumber(targets.footer.value, 0.01, `${setting} ? .007 : .01`);
 }
@@ -236,6 +237,12 @@ function patchCurrentMapBold(ast) {
 
     if (loop.body.TYPE !== "BlockStatement") throw new Error("Current map label loop body is not a block");
     const selectedName = [...selectedNames][0];
+    loop.body.body.push(AST.parse(
+        `${arrayName}[${indexName}].p2.style.setProperty("bottom", "0.25em", "important");`
+    ).body[0]);
+    loop.body.body.push(AST.parse(
+        `${arrayName}[${indexName}].p2.style.setProperty("line-height", "1", "important");`
+    ).body[0]);
     loop.body.body.push(AST.parse(
         `${arrayName}[${indexName}].p2.style.setProperty("font-weight", ${indexName} === ${selectedName} ? "700" : "normal", "important");`
     ).body[0]);

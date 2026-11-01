@@ -220,11 +220,33 @@ import { createFrameScheduler } from "./frameScheduler.js";
       }));
       const selfRow = rows.find(({ row }) => row.dataset.fxSelf === "true");
       const selfIsReady = selfRow?.readiness === "ready";
-      const ownClan = getClan(ownName, parseClan) ?? selfRow?.clan ?? null;
+      const ownClan = getClan(selfRow?.row.textContent.replace(/^(?:🟢|⚪)\s*/u, ""), parseClan)
+        ?? getClan(selfRow?.row.title, parseClan)
+        ?? getClan(selfRow?.row.dataset.fxAccountName, parseClan)
+        ?? getClan(ownName, parseClan)
+        ?? selfRow?.clan
+        ?? null;
       let total = 0;
       let shown = 0;
       let readyClanmate = false;
-      for (const { row, isFollowed, readiness, rank, clan } of rows) {
+      const sortingActive = sortFollowedFirst || rankSortDirection !== 0;
+      const orderedRows = rows.slice();
+      if (sortingActive) {
+        orderedRows.sort((a, b) => {
+          if (sortFollowedFirst) {
+            const followedDifference = Number(b.isFollowed) - Number(a.isFollowed);
+            if (followedDifference) return followedDifference;
+          }
+          if (!rankSortDirection) return 0;
+          const validA = Number.isFinite(a.rank) && a.rank > 0;
+          const validB = Number.isFinite(b.rank) && b.rank > 0;
+          if (validA !== validB) return validA ? -1 : 1;
+          if (!validA) return 0;
+          return (a.rank - b.rank) * rankSortDirection;
+        });
+      }
+      const orderByRow = new Map(orderedRows.map(({ row }, index) => [row, String(index)]));
+      for (const { row, isFollowed, readiness, clan } of rows) {
         total++;
         const text = row.textContent.trim();
         const matchesReadiness = readyFilter.value === "all"
@@ -240,39 +262,13 @@ import { createFrameScheduler } from "./frameScheduler.js";
           || (clanFilter.value === "my-clan" && ownClan != null && clan === ownClan);
         const visible = text.toLocaleLowerCase().includes(query) && matchesReadiness && matchesFollowed && matchesClan;
         if (visible) shown++;
-        const desiredOrder = sortFollowedFirst ? (isFollowed ? "-1" : "0") : "";
+        const desiredOrder = sortingActive ? orderByRow.get(row) : "";
         if (row.style.order !== desiredOrder) row.style.order = desiredOrder;
         if (row.style.fontSize !== ".58em") row.style.fontSize = ".58em";
         const desiredDisplay = visible ? "inline-block" : "none";
         if (row.style.getPropertyValue("display") !== desiredDisplay
           || row.style.getPropertyPriority("display") !== "important") {
           row.style.setProperty("display", desiredDisplay, "important");
-        }
-      }
-      if (sortFollowedFirst || rankSortDirection !== 0) {
-        const orderedRows = rows.slice();
-        orderedRows.sort((a, b) => {
-          if (sortFollowedFirst) {
-            const followedDifference = Number(b.isFollowed) - Number(a.isFollowed);
-            if (followedDifference) return followedDifference;
-          }
-          if (!rankSortDirection) return 0;
-          const validA = Number.isFinite(a.rank) && a.rank > 0;
-          const validB = Number.isFinite(b.rank) && b.rank > 0;
-          if (validA !== validB) return validA ? -1 : 1;
-          if (!validA) return 0;
-          return (a.rank - b.rank) * rankSortDirection;
-        });
-        const sorted = orderedRows.every((entry, index) => entry === rows[index]);
-        if (!sorted) {
-          const orderedElements = orderedRows.map(entry => entry.row);
-          const rowSet = new Set(rows.map(entry => entry.row));
-          const fragment = document.createDocumentFragment();
-          let rowIndex = 0;
-          for (const child of originalChildren) {
-            fragment.appendChild(rowSet.has(child) ? orderedElements[rowIndex++] : child);
-          }
-          list.appendChild(fragment);
         }
       }
       playerCount.textContent = translate("showingPlayers")
@@ -312,6 +308,7 @@ import { createFrameScheduler } from "./frameScheduler.js";
     const scheduleApplyFilter = createFrameScheduler(() => {
       if (active) applyFilterNow();
     });
+    const clanRefreshTimer = window.setInterval(scheduleApplyFilter, 1000);
     search.addEventListener("input", () => { persistFilterState(); scheduleApplyFilter(); });
     readyFilter.addEventListener("change", () => { persistFilterState(); scheduleApplyFilter(); });
     followedFilter.addEventListener("change", () => { persistFilterState(); scheduleApplyFilter(); });
@@ -416,6 +413,7 @@ import { createFrameScheduler } from "./frameScheduler.js";
     const dispose = () => {
       if (!active) return;
       active = false;
+      window.clearInterval(clanRefreshTimer);
       borderObserver.disconnect();
       filterObserver.disconnect();
       controls.remove();
