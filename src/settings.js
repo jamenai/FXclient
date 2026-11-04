@@ -65,6 +65,11 @@ const fxText = {
     followedOnly: "Followed only",
     ready: "Ready",
     notReady: "Not ready",
+    ownTerritory: "Own territory",
+    highlightSelfTerritory: "Highlight my territory",
+    selfTerritoryOutlineWidth: "Outline width",
+    selfTerritoryGlow: "Glow strength",
+    selfTerritoryHighlightNote: "Adds a high-contrast contour around your own territory on the map.",
   },
   de: {
     enhancedLobbyLayout: "Verbessertes Lobby-Layout",
@@ -102,6 +107,11 @@ const fxText = {
     followedOnly: "Nur gefolgte",
     ready: "Bereit",
     notReady: "Nicht bereit",
+    ownTerritory: "Eigenes Gebiet",
+    highlightSelfTerritory: "Eigenes Gebiet hervorheben",
+    selfTerritoryOutlineWidth: "Konturbreite",
+    selfTerritoryGlow: "Leuchtstärke",
+    selfTerritoryHighlightNote: "Hebt dein eigenes Gebiet auf der Karte mit einer kontrastreichen Kontur hervor.",
   },
 };
 __fx.translateFX = key => fxText[(navigator.language || "en").toLowerCase().startsWith("de") ? "de" : "en"][key] ?? key;
@@ -310,6 +320,31 @@ const settingsManager = new (function () {
       max: 75,
       step: 1,
     },
+    SectionHeader(__fx.translateFX("ownTerritory")),
+    {
+      for: "highlightSelfTerritory",
+      type: "checkbox",
+      label: __fx.translateFX("highlightSelfTerritory"),
+      note: __fx.translateFX("selfTerritoryHighlightNote"),
+    },
+    {
+      for: "selfTerritoryOutlineWidth",
+      type: "rangeInput",
+      label: __fx.translateFX("selfTerritoryOutlineWidth"),
+      min: 1,
+      max: 6,
+      step: 0.5,
+      unit: "px",
+    },
+    {
+      for: "selfTerritoryGlow",
+      type: "rangeInput",
+      label: __fx.translateFX("selfTerritoryGlow"),
+      min: 0,
+      max: 12,
+      step: 1,
+      unit: "px",
+    },
     SectionHeader("Names"),
     { for: "realisticNames", type: "checkbox", label: "Realistic Bot Names" },
     { for: "hideBotNames", type: "checkbox", label: "Hide bot names" },
@@ -437,8 +472,10 @@ const settingsManager = new (function () {
     label.append(element);
     if (item.type === "rangeInput") {
       const output = document.createElement("output");
-      output.value = element.value + "%";
-      element.addEventListener("input", () => { output.value = element.value + "%"; });
+      const unit = item.unit ?? "%";
+      output.dataset.unit = unit;
+      output.value = element.value + unit;
+      element.addEventListener("input", () => { output.value = element.value + unit; });
       rangeOutputs[item.for] = output;
       label.append(" ", output);
     }
@@ -516,7 +553,7 @@ const settingsManager = new (function () {
   this.syncFields = function () {
     Object.keys(inputFields).forEach(function (key) {
       inputFields[key].value = settings[key];
-      if (rangeOutputs[key]) rangeOutputs[key].value = inputFields[key].value + "%";
+      if (rangeOutputs[key]) rangeOutputs[key].value = inputFields[key].value + rangeOutputs[key].dataset.unit;
     });
     Object.keys(checkboxFields).forEach(function (key) {
       checkboxFields[key].checked = settings[key];

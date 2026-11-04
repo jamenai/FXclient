@@ -22,6 +22,7 @@ import nameFilter from './nameFilter.js';
 import followedAccounts from './followedAccounts.js';
 import passwordReset from './passwordReset.js';
 import savedAccounts from './savedAccounts.js';
+import { installSelfTerritoryHighlight } from "./selfTerritoryHighlight.js";
 import { getVar } from "./gameInterface.js";
 import { publishFxBridge } from "./fxBridge.js";
 
@@ -52,6 +53,7 @@ const fxBridge = publishFxBridge(window, {
   followedAccounts,
   passwordReset,
   savedAccounts,
+  selfTerritoryHighlight: { install: installSelfTerritoryHighlight },
   getGameVar: getVar,
 });
 

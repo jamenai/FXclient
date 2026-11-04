@@ -11,6 +11,9 @@ const defaultValues = Object.freeze({
   densityDisplayStyle: "absoluteQuotient",
   hideBotNames: false,
   highlightClanSpawns: false,
+  highlightSelfTerritory: true,
+  selfTerritoryOutlineWidth: 3,
+  selfTerritoryGlow: 6,
   highlightDuplicateIps: false,
   highlightSameClan: false,
   detailedTeamPercentage: false,
@@ -48,6 +51,8 @@ const schemaEntries = Object.fromEntries(
 );
 
 schemaEntries.estimatedAttackGreenThreshold = { type: "number", min: 5, max: 75 };
+schemaEntries.selfTerritoryOutlineWidth = { type: "number", min: 1, max: 6 };
+schemaEntries.selfTerritoryGlow = { type: "number", min: 0, max: 12 };
 schemaEntries.startingPercentage = { type: "number", min: 0, max: 100 };
 schemaEntries.lobbyFontScale = { type: "number", min: 75, max: 125 };
 schemaEntries.densityDisplayStyle = { type: "string", values: ["percentage", "absoluteQuotient"] };

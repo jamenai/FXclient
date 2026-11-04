@@ -18,6 +18,7 @@ import quickEmojis from "./quickEmojis.js";
 import replayHistory from "./replayHistory.js";
 import replayTimebar from "./replayTimebar.js";
 import savedAccounts from "./savedAccounts.js";
+import selfTerritoryHighlight from "./selfTerritoryHighlight.js";
 import titanChatButton from "./titanChatButton.js";
 
 // Preserve the current application order explicitly. Patch dependencies and
@@ -42,6 +43,7 @@ export const patchRegistry = [
     ["replayHistory.js", replayHistory],
     ["replayTimebar.js", replayTimebar],
     ["savedAccounts.js", savedAccounts],
+    ["selfTerritoryHighlight.js", selfTerritoryHighlight],
     ["titanChatButton.js", titanChatButton],
 ];
 
