@@ -5,10 +5,19 @@ import versionData from '../version.json';
 import { displayChangelog } from './changelog.js';
 import replayHistory from './replayHistory.js'
 import { LobbyReminderRulesInput } from './lobbyReminderRulesInput.js';
+import { createCustomQuickEmojis } from "./settings/customQuickEmojis.js";
 import { getGameEmojiTile } from "./gameInterface.js";
+import { loadSettings, parseImportedSettings } from "./settingsStore.js";
+import { MutePingSection } from "./settings/mutePingSection.js";
+import { createReplayHistoryList } from "./settings/replayHistoryList.js";
+import { createDefaultSettings, DISCONTINUED_SETTINGS, migrateSettings } from "./settingsSchema.js";
 
 window.__fx = window.__fx || {};
 const __fx = window.__fx;
+const CustomQuickEmojis = createCustomQuickEmojis({
+  getQuickEmojis: () => __fx.quickEmojis,
+  getEmojiTile: getGameEmojiTile,
+});
 const eliminationEstimateText = (navigator.language || "en").toLowerCase().startsWith("de")
   ? {
       label: "Gesch\u00e4tzte Angriffsmenge f\u00fcr vollst\u00e4ndige Vernichtung anzeigen",
@@ -69,51 +78,8 @@ const fxText = {
 };
 __fx.translateFX = key => fxText[(navigator.language || "en").toLowerCase().startsWith("de") ? "de" : "en"][key] ?? key;
 
-var settings = {
-  //"showBotDonations": false,
-  displayWinCounter: true,
-  displayTickNumber: true,
-  useFullscreenMode: false,
-  hoveringTooltip: true,
-  //"hideAllLinks": false,
-  realisticNames: false,
-  showPlayerDensity: true,
-  showEstimatedEliminationAttack: false,
-  estimatedAttackGreenThreshold: 25,
-  coloredDensity: true,
-  densityDisplayStyle: "absoluteQuotient",
-  hideBotNames: false,
-  highlightClanSpawns: false,
-  highlightDuplicateIps: false,
-  highlightSameClan: false,
-  detailedTeamPercentage: false,
-  openDonationHistoryFromLb: true,
-  //"customMapFileBtn": true
-  customBackgroundUrl: "",
-  keybindButtons: false,
-  attackPercentageKeybinds: [],
-  startingPercentageEnabled: false,
-  startingPercentage: 50,
-  hidePropagandaPopup: false,
-  showReplayTimebar: true,
-  customQuickEmojisEnabled: false,
-  customQuickEmojis: [],
-  lobbyReminderRules: [],
-  enhancedLobbyLayout: true,
-  lobbyFontScale: 100,
-  mutePingAll: false,
-  mutePingEveryone: false,
-  mutePingRoom: false,
-  mutePingClan: false,
-  mutePingLanguage: false,
-  mutePingDirect: false,
-  hideInappropriateNames: false,
-  followedAccountNicknames: {},
-  followedAccountColors: {},
-  savedAccountLabels: {}
-};
+var settings = createDefaultSettings();
 __fx.settings = settings;
-const discontinuedSettings = ["hideAllLinks", "fontName"];
 __fx.makeMainMenuTransparent = false;
 
 async function clearCacheAndReload() {
@@ -145,182 +111,14 @@ function createButton(text, action) {
     return button;
 }
 
-const CELL = 2.35;
-const PANEL_STYLE = { display: "grid", gridAutoRows: CELL + "em", gap: CELL / 3 + "em",
-  padding: CELL / 6 + "em", width: "max-content", background: "rgba(0, 0, 0, 0.75)",
-  border: "2px solid white", transition: "none", animation: "none" };
-const CELL_STYLE = { display: "flex", alignItems: "center", justifyContent: "center",
-  fontSize: CELL * 0.89 + "em", lineHeight: "1", cursor: "pointer", userSelect: "none",
-  transition: "none", animation: "none" };
-const ICON_BASE = 1011;
-const ICON_COUNT = 13;
-const MORE_CODE = ICON_BASE + ICON_COUNT;
-const tileUrls = {};
-function tileFor(code) {
-  if (code < ICON_BASE || code > MORE_CODE) return "";
-  if (!tileUrls[code]) {
-    const canvas = getGameEmojiTile(code - ICON_BASE);
-    if (canvas) tileUrls[code] = canvas.toDataURL();
-  }
-  return tileUrls[code] || "";
-}
-
-function CustomQuickEmojis(container) {
-  const label = document.createElement("label");
-  label.className = "checkbox";
-  label.append("Use custom quick emojis ");
-  const note = document.createElement("small");
-  note.innerText = "Choose the 9 emojis shown in the in-game quick-emoji bar, in order, instead of them being picked automatically based on usage. Click \"Save Settings\" below to apply.";
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  const checkmark = document.createElement("span");
-  checkmark.className = "checkmark";
-  label.append(document.createElement("br"), note, checkbox, checkmark);
-  container.append(label, document.createElement("br"));
-
-  const picker = document.createElement("div");
-  Object.assign(picker.style,
-    { display: "none", margin: "8px 0", transition: "none", animation: "none" });
-  container.append(picker);
-
-  const slotsRow = document.createElement("div");
-  Object.assign(slotsRow.style, PANEL_STYLE,
-    { gridTemplateColumns: "repeat(9, " + CELL + "em)", marginBottom: CELL / 3 + "em" });
-  const grid = document.createElement("div");
-  Object.assign(grid.style, PANEL_STYLE,
-    { gridTemplateColumns: "repeat(10, " + CELL + "em)", display: "none" });
-  picker.append(slotsRow, grid);
-
-  const slots = [];
-  const codes = new Array(9).fill(null);
-  let options = [];
-  let armed = null;
-  let page = 1;
-
-  const quickEmojis = () => __fx.quickEmojis || {};
-  const isFlag = (code) => code < (quickEmojis().emojiBaseCode ?? 676);
-  const glyphFor = (code) =>
-    isFlag(code)
-      ? String.fromCodePoint(0x1f1e6 + Math.floor(code / 26), 0x1f1e6 + (code % 26))
-      : (quickEmojis().emojiList ?? [])[code - (quickEmojis().emojiBaseCode ?? 676)] ?? "";
-
-  function paint(cell, code, round = true) {
-    const tile = code >= ICON_BASE && code <= MORE_CODE;
-    const tileUrl = tile ? tileFor(code) : "";
-    cell.innerHTML = "";
-    cell.textContent = "";
-    cell.style.backgroundColor = !tile ? "transparent"
-      : code === MORE_CODE ? "rgba(0, 180, 0, 0.6)" : "rgba(0, 0, 0, 0.6)";
-    if (round) cell.style.borderRadius = tile ? "50%" : "";
-    if (tileUrl) {
-      const img = document.createElement("img");
-      img.src = tileUrl;
-      img.alt = "";
-      Object.assign(img.style, { width: "100%", height: "100%", objectFit: "contain" });
-      cell.append(img);
-    } else if (!tile) {
-      cell.textContent = glyphFor(code);
-    }
-  }
-
-  function makeCell(code, onClick) {
-    const cell = document.createElement("div");
-    Object.assign(cell.style, CELL_STYLE);
-    paint(cell, code);
-    cell.addEventListener("click", onClick);
-    return cell;
-  }
-
-  for (let i = 0; i < 9; i++) {
-    const slot = document.createElement("div");
-    Object.assign(slot.style, CELL_STYLE);
-    slot.style.borderRadius = "0";
-    slot.addEventListener("click", () => (armed === i ? close() : open(i)));
-    slots.push(slot);
-    slotsRow.append(slot);
-  }
-
-  function open(index) {
-    build();
-    page = 1;
-    renderPage();
-    arm(index);
-    grid.style.display = "grid";
-  }
-
-  function close() {
-    arm(null);
-    grid.style.display = "none";
-  }
-
-  function arm(index) {
-    armed = index;
-    slots.forEach((slot, i) => {
-      slot.style.boxShadow = i === index ? "inset 0 0 0 2px rgb(0, 200, 0)" : "";
-    });
-  }
-
-  function renderPage() {
-    grid.textContent = "";
-    if (!options.length) return;
-    let end = 49 * page;
-    if (end - 49 >= options.length) {
-      page = 1;
-      end = 49;
-    }
-    end = Math.min(end, options.length);
-    options.slice(Math.max(0, end - 49), end)
-      .forEach((code) => grid.append(makeCell(code, () => select(code))));
-    grid.append(makeCell(MORE_CODE, () => {
-      page++;
-      renderPage();
-    }));
-  }
-
-  function select(code) {
-    if (armed === null) return;
-    codes[armed] = code;
-    paint(slots[armed], code, false);
-    close();
-  }
-
-  function build() {
-    if (options.length) return;
-    const { emojiList = [], emojiBaseCode = 676, realFlagCodes = [] } = quickEmojis();
-    if (!emojiList.length) return;
-    options = Array.from({ length: ICON_COUNT }, (unused, i) => ICON_BASE + i)
-      .concat(emojiList.map((unused, i) => emojiBaseCode + i), realFlagCodes);
-  }
-
-  function paintSlots() {
-    slots.forEach((slot, i) => {
-      if (codes[i] === null) codes[i] = options[i] ?? ICON_BASE + i;
-      paint(slot, codes[i], false);
-    });
-  }
-
-  function updateVisibility() {
-    picker.style.display = checkbox.checked ? "block" : "none";
-  }
-  checkbox.addEventListener("change", updateVisibility);
-
-  this.save = function (targetSettings) {
-    targetSettings.customQuickEmojisEnabled = checkbox.checked;
-    targetSettings.customQuickEmojis = codes.slice();
-  };
-
-  this.update = function (currentSettings) {
-    checkbox.checked = !!currentSettings.customQuickEmojisEnabled;
-    updateVisibility();
-    (currentSettings.customQuickEmojis || []).forEach((entry, i) => {
-      const code = Number(entry?.code ?? entry);
-      if (i < 9 && !isNaN(code)) codes[i] = code;
-    });
-    build();
-    paintSlots();
-    close();
-  };
-}
+const ReplayHistoryList = createReplayHistoryList({
+  history: replayHistory,
+  closeSettings: () => WindowManager.closeWindow("settings"),
+  saveFile,
+  createButton,
+  copyToClipboard: text => navigator.clipboard.writeText(text),
+  showAlert: message => alert(message),
+});
 
 function StartingPercentageInput(container) {
   const label = document.createElement("label");
@@ -375,137 +173,6 @@ function SectionHeader(text) {
     title.innerText = text;
     container.append(title);
   };
-}
-
-function createCheckboxRow(labelText, note) {
-  const label = document.createElement("label");
-  label.className = "checkbox";
-  label.append(labelText + " ");
-  if (note) {
-    const noteElement = document.createElement("small");
-    noteElement.innerText = note;
-    label.append(document.createElement("br"), noteElement);
-  }
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  const checkmark = document.createElement("span");
-  checkmark.className = "checkmark";
-  label.append(checkbox, checkmark);
-  return { label, checkbox };
-}
-
-function MutePingSection(container) {
-  const pingTypes = [
-    { key: "mutePingEveryone", label: "Mute @all, @everyone and @0ya pings" },
-    { key: "mutePingRoom", label: "Mute @room1 - @room4 pings" },
-    { key: "mutePingClan", label: "Mute clan pings (@[TAG])" },
-    { key: "mutePingLanguage", label: "Mute language pings (@en, @de, ...)" },
-    { key: "mutePingDirect", label: "Mute pings of your username" }
-  ];
-
-  const header = document.createElement("p");
-  const heading = document.createElement("b");
-  heading.innerText = "Muted lobby pings";
-  header.append(heading);
-  container.append(header);
-
-  const master = createCheckboxRow("Mute all pings");
-  container.append(master.label, document.createElement("br"));
-
-  const subCheckboxes = {};
-  const savedState = {};
-  pingTypes.forEach(({ key, label, note }) => {
-    const row = createCheckboxRow(label, note);
-    container.append(row.label, document.createElement("br"));
-    subCheckboxes[key] = row.checkbox;
-    row.checkbox.addEventListener("change", () => savedState[key] = row.checkbox.checked);
-  });
-
-  function applyMasterState() {
-    const allMuted = master.checkbox.checked;
-    Object.keys(subCheckboxes).forEach(key => {
-      subCheckboxes[key].checked = allMuted ? true : (savedState[key] ?? false);
-      subCheckboxes[key].disabled = allMuted;
-    });
-  }
-  master.checkbox.addEventListener("change", () => {
-    if (master.checkbox.checked) Object.keys(subCheckboxes).forEach(key => savedState[key] = subCheckboxes[key].checked);
-    applyMasterState();
-  });
-
-  this.update = function (settings) {
-    Object.keys(subCheckboxes).forEach(key => savedState[key] = !!settings[key]);
-    master.checkbox.checked = !!settings.mutePingAll;
-    applyMasterState();
-  };
-  this.save = function (targetSettings) {
-    targetSettings.mutePingAll = master.checkbox.checked;
-    Object.keys(subCheckboxes).forEach(key => {
-      targetSettings[key] = master.checkbox.checked ? savedState[key] : subCheckboxes[key].checked;
-    });
-  };
-}
-
-function ReplayHistoryList(container) {
-  const title = document.createElement("p");
-  title.innerHTML = "<b>Saved Replays</b> (auto-saves your last 5 games)";
-  container.append(title);
-
-  const list = document.createElement("div");
-  container.append(list);
-
-  function formatTime(timestamp) {
-    const minutes = Math.floor((Date.now() - timestamp) / 60000);
-    if (minutes < 1) return "just now";
-    if (minutes < 60) return minutes + "m ago";
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return hours + "h ago";
-    return Math.floor(hours / 24) + "d ago";
-  }
-
-  function render() {
-    list.innerHTML = "";
-    const replays = replayHistory.getAll();
-    if (!replays.length) {
-      const empty = document.createElement("small");
-      empty.innerText = "No replays saved yet. Finish a game and it'll show up here.";
-      list.append(empty);
-      return;
-    }
-    replays.forEach((replay) => {
-      const row = document.createElement("div");
-      row.style.display = "flex";
-      row.style.alignItems = "center";
-      row.style.gap = "6px";
-      row.style.marginBottom = "4px";
-
-      const label = document.createElement("small");
-      label.innerText = formatTime(replay.timestamp);
-      label.style.flex = "1";
-
-      const loadBtn = createButton("Load", () => {
-        WindowManager.closeWindow("settings");
-        replayHistory.load(replay.data);
-      })
-      const copyBtn = createButton("Copy", () => {
-          navigator.clipboard.writeText(replay.data).then(() => {
-          copyBtn.innerText = "Copied!";
-          setTimeout(() => (copyBtn.innerText = "Copy"), 1500);
-        }).catch(() => alert("Failed to copy"));
-      });
-      const deleteBtn = createButton("Delete", () => {
-        replayHistory.remove(replay.timestamp);
-        render();
-      });
-      const downloadBtn = createButton("Download", () =>
-        saveFile(replay.data, `replay_${replay.timestamp}.txt`, "text/plain"),
-      )
-      row.append(label, loadBtn, copyBtn, downloadBtn, deleteBtn);
-      list.append(row);
-    });
-  }
-
-  this.update = render;
 }
 
 const settingsManager = new (function () {
@@ -763,7 +430,7 @@ const settingsManager = new (function () {
     customElements.forEach((element) => element.save?.(settings));
     this.applySettings();
     WindowManager.closeWindow("settings");
-    discontinuedSettings.forEach((settingName) => delete settings[settingName]);
+    DISCONTINUED_SETTINGS.forEach((settingName) => delete settings[settingName]);
     localStorage.setItem("fx_settings", JSON.stringify(settings));
     window.location.reload();
   };
@@ -784,12 +451,13 @@ const settingsManager = new (function () {
     fileReader.onload = function () {
       let result;
       try {
-        result = JSON.parse(fileReader.result);
+        result = parseImportedSettings(fileReader.result, createDefaultSettings());
         if (
           confirm(
             'Warning: This will override all current settings, click "OK" to confirm'
           )
         )
+          migrateSettings(result);
           __fx.settings = settings = result;
         localStorage.setItem("fx_settings", JSON.stringify(settings));
         window.location.reload();
@@ -882,21 +550,9 @@ WindowManager.add({
   },
 });
 
-if (localStorage.getItem("fx_settings") !== null) {
-  __fx.settings = settings = {
-    ...settings,
-    ...JSON.parse(localStorage.getItem("fx_settings")),
-  };
-}
+__fx.settings = settings = loadSettings(localStorage.getItem("fx_settings"), createDefaultSettings());
 
-// migrate old emoji settings to new
-if (settings.emojiBar !== undefined || settings.customEmojiBar !== undefined) {
-  if (settings.customQuickEmojis.length === 0 && !settings.customQuickEmojisEnabled) {
-    if (Array.isArray(settings.emojiBar) && settings.emojiBar.length === 9) settings.customQuickEmojis = settings.emojiBar;
-    if (settings.customEmojiBar) settings.customQuickEmojisEnabled = true;
-  }
-  delete settings.emojiBar;
-  delete settings.customEmojiBar;
+if (migrateSettings(settings)) {
   localStorage.setItem("fx_settings", JSON.stringify(settings));
 }
 
