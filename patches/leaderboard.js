@@ -247,9 +247,6 @@ export default definePatch(({ safeDictionary: dict, modifyCode, waitForMinificat
 			: __fx.leaderboardFilter.enabled ? (updateFilteredLb(), leaderboardArray[__fx.leaderboardFilter.filteredLeaderboard[a0p + position] ?? (isEmptySpace = true, leaderboardPositionsById[game.playerId])]) : leaderboardArray[a0p + position]),
 			a0p === windowHeight - 1 && !__fx.leaderboardFilter.showingRivals && (__fx.leaderboardFilter.enabled ? this.playerPos : leaderboardPositionsById[game.playerId]) >=
 			position + windowHeight - 1 && (x = game.playerId),`);
-            // Get clan parsing function
-            replaceRawCode(`this.uI=function(username){var uK,uJ=username.indexOf("[");return!(uJ<0)&&1<(uK=username.indexOf("]"))-uJ&&uK-uJ<=8?username.substring(uJ+1,uK).toUpperCase().trim():null},`,
-                `this.uI=function(username){var uK,uJ=username.indexOf("[");return!(uJ<0)&&1<(uK=username.indexOf("]"))-uJ&&uK-uJ<=8?username.substring(uJ+1,uK).toUpperCase().trim():null}, __fx.leaderboardFilter.parseClanFromPlayerName = this.uI;`);
 			// no pinning player on leaderboard in rivals tab
             replaceRawCode(
                 `2==gi&&(aBj(aE.et),bD.r2.textAlign(aBH,0),aBk(aBF-1,kF[aE.et],aE.et),bD.r2.textAlign(aBH,2),aBl(aBF-1,aE.et)),`,

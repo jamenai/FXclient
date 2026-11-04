@@ -1,5 +1,16 @@
 import { getVar } from "./gameInterface.js";
 
+function parseClanFromPlayerName(username) {
+    if (typeof username !== "string") return null;
+    const openingBracket = username.indexOf("[");
+    if (openingBracket < 0) return null;
+    const closingBracket = username.indexOf("]", openingBracket + 1);
+    const bracketDistance = closingBracket - openingBracket;
+    if (closingBracket < 0 || bracketDistance <= 1 || bracketDistance > 8) return null;
+    const clanTag = username.slice(openingBracket + 1, closingBracket).toUpperCase().trim();
+    return clanTag || null;
+}
+
 export const leaderboardFilter = new (function() {
     //this.playersToInclude = [0,1,8,20,24,30,32,42,50,69,200,400,500,510,511]; // for testing
     this.playersToInclude = [];
@@ -13,7 +24,8 @@ export const leaderboardFilter = new (function() {
     this.scrollToTop = () => {};
     this.repaintLeaderboard = () => {};
     this.setUpdateFlag = () => {};
-    this.parseClanFromPlayerName = () => { console.warn("parse function not set"); };
+    /** @type {(username: string) => string | null} */
+    this.parseClanFromPlayerName = parseClanFromPlayerName;
 
     this.selectedTab = 0;
     this.tabHovering = -1;
