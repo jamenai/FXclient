@@ -262,18 +262,18 @@ function patchCurrentMapSummaryBold(ast) {
             const button = child.left.expression;
             if (button?.TYPE !== "Dot" || button.property !== "button" || button.expression?.TYPE !== "Sub"
                 || button.expression.property?.TYPE !== "Number" || button.expression.property.value !== 0) return;
-            if (button.expression.expression?.TYPE === "SymbolRef") summaries.push(button.expression.expression.name);
+            summaries.push(button.print_to_string());
         });
         if (referencesMapSeed && summaries.length === 1) {
-            matches.push({ node, buttonArray: summaries[0] });
+            matches.push({ node, buttonExpression: summaries[0] });
         }
     }));
     if (matches.length !== 1) throw new Error(`Expected one current map summary update, found ${matches.length}`);
 
-    const { node, buttonArray } = matches[0];
+    const { node, buttonExpression } = matches[0];
     if (!Array.isArray(node.body)) throw new Error("Current map summary function body is not a statement list");
     node.body.unshift(AST.parse(
-        `${buttonArray}[0].button.style.setProperty("font-weight", "700", "important");`
+        `${buttonExpression}.style.setProperty("font-weight", "700", "important");`
     ).body[0]);
 }
 
