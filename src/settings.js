@@ -303,6 +303,16 @@ const settingsManager = new (function () {
       label: "Display tick number near the balance",
     },
     {
+      for: "showCountryFlagsOnLand",
+      type: "checkbox",
+      label: (navigator.language || "en").toLowerCase().startsWith("de")
+        ? "Unicode-Länderflaggen auf der Karte anzeigen"
+        : "Show Unicode country flags on the map",
+      note: (navigator.language || "en").toLowerCase().startsWith("de")
+        ? "Ersetzt erkannte Unicode-Flaggen in Spielernamen auf dem Gebiet durch Flaggenbilder."
+        : "Replaces recognized Unicode flags in player names above their territory with flag images.",
+    },
+    {
       for: "showWorldClock",
       type: "checkbox",
       label: __fx.translateFX("showWorldClock"),

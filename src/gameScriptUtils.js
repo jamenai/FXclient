@@ -2,6 +2,7 @@ import { getSettings } from "./settings.js";
 import { getVar } from "./gameInterface.js";
 import { leaderboardFilter } from "./clanFilters.js";
 import { escapeHtml } from "./utils.js";
+import { drawPlayerNameWithCountryFlags } from "./countryFlagRenderer.js";
 
 // Example usage from game script: __fx.utils.getMaxTroops(...)
 
@@ -169,4 +170,4 @@ function parseAccountId(value) {
     return match ? match[0] : null;
 }
 
-export default { getMaxTroops, getDensity, getLobbyPlayerRank, getEstimatedEliminationAttack, drawEstimatedEliminationAttack, isPointInRectangle, fillTextMultiline, textStyleBasedOnDensity, getDuplicateIpHighlightColor, getSameClanHighlightColor, escapeHtml, parseAccountId }
+export default { getMaxTroops, getDensity, getLobbyPlayerRank, getEstimatedEliminationAttack, drawEstimatedEliminationAttack, drawPlayerNameWithCountryFlags, isPointInRectangle, fillTextMultiline, textStyleBasedOnDensity, getDuplicateIpHighlightColor, getSameClanHighlightColor, escapeHtml, parseAccountId }

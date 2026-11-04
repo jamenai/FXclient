@@ -1,8 +1,8 @@
 {
-    "version": "0.1.2",
+    "version": "0.1.3",
     "lastUpdated": "November 4",
     "changes": [
-        "Configurable elimination attack estimate multiplier"
+        "Display Unicode country flags on the map"
     ],
     "isSignificant": true
 }

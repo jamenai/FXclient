@@ -70,7 +70,12 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
                   $<playerData>[${JSON.stringify(playerDataFieldNames.playerCommitted)}]?.[___id]
               )
             : "";
-        if (showName) $7, $10;
+        if (showName) {
+          if (!__fx.settings.showCountryFlagsOnLand || !__fx.utils.drawPlayerNameWithCountryFlags(
+            $<canvas>, $<playerData>.$<playerNames>[$<i>], $<x>, $<y>
+          )) $7;
+          $10;
+        }
         ${placeBalanceAbove} && __fx.settings.showPlayerDensity && (
             __fx.settings.coloredDensity && ($<canvas>.fillStyle = __fx.utils.textStyleBasedOnDensity(___id)),
             $<canvas>.fillText(__fx.utils.getDensity(___id), $<x>, showName ? $<y> + $<fontSize> : $<y>),
