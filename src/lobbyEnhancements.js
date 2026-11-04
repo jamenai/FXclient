@@ -1,9 +1,12 @@
 import { isLobbyPlayerRow, syncLobbyReadiness } from "./lobbyRoster.js";
 import { createFrameScheduler } from "./frameScheduler.js";
 
-(() => {
+let disposeLobbyEnhancements = null;
+
+export function initializeLobbyEnhancements() {
+  if (disposeLobbyEnhancements) return disposeLobbyEnhancements;
   const searchClass = "fx-lobby-roster-search";
-  if (window.__fx?.settings?.enhancedLobbyLayout === false) return;
+  if (window.__fx?.settings?.enhancedLobbyLayout === false) return () => {};
   const translate = key => window.__fx?.translateFX?.(key) ?? key;
   const fontScale = () => Math.max(0.75, Math.min(1.25, Number(window.__fx?.settings?.lobbyFontScale ?? 100) / 100));
   const filterFontSize = () => `clamp(11px, ${0.4 * fontScale()}em, 14px)`;
@@ -464,7 +467,7 @@ import { createFrameScheduler } from "./frameScheduler.js";
     }
   }
 
-  new MutationObserver(records => {
+  const observer = new MutationObserver(records => {
     for (const observerRecord of activeRosterObservers) {
       if (!observerRecord.list.isConnected
         || !observerRecord.root.isConnected
@@ -480,11 +483,20 @@ import { createFrameScheduler } from "./frameScheduler.js";
         if (node instanceof Element) scan(node);
       }
     }
-  }).observe(document.documentElement, {
+  });
+  observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
     attributes: true,
     attributeFilter: ["data-fx-account-name"]
   });
   scan(document.documentElement);
-})();
+
+  const dispose = () => {
+    observer.disconnect();
+    for (const observerRecord of activeRosterObservers) observerRecord.dispose();
+    disposeLobbyEnhancements = null;
+  };
+  disposeLobbyEnhancements = dispose;
+  return dispose;
+}

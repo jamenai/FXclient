@@ -41,6 +41,19 @@ this.ye = new Array(bV.aNY + 1);
 this.ye[0] = { j: 230, k: 230 };
 `;
 
+const deferredFixture = [
+  `b7.dH(a0),0===b7.size?aq.kt.aJJ(wR,3205):`,
+  `this.xZ=function(){Sockets.kt.wf(3260),i___.kt.we()}`,
+  `function(){n.r(),bl.zf(),Sockets.s.ze(3240),n.o(5,5)}`,
+  `(sV.style.backdropFilter="blur(4px)",sV.style.webkitBackdropFilter="blur(4px)"),`,
+  `if((t3=bk.t1.t3[e0])<2)return!1;`,
+  `m.n___(4,5,new o(L(42),xT(e),!0))`,
+  `this.vK=this.jS=this.data.a0f,this.gameIsSingleplayer=1===this.vK,`,
+  `if(9===a1.jq)this.jr();else if(a1.js)if(3===a1.data.jv)for(z=a1.ju-1;0<=z;z--){var jw=z+jp;this.ie[jw]=`,
+  `:50,this.a=this.b=this.data.c,this.d=this.b?new e:null,`,
+  `1===a.b?this.gLobbyMaxJoin=this.gHumans:this.gLobbyMaxJoin=this.data.playerCount,this.maxPlayers=this.gLobbyMaxJoin,this.gBots=this.gLobbyMaxJoin-this.gHumans,this.sg=0,`,
+].join(";");
+
 function makeModUtils(source = fixture, lobbyIdentifier = "Lobby") {
   const modUtils = new ModUtils(minifyCode(source));
   modUtils.dictionary.Lobby = lobbyIdentifier;
@@ -60,6 +73,14 @@ test("patches custom lobby anchors and hooks with the default lobby identifier",
   assert.match(modUtils.script, /__fx\.customLobby\.setSendFunction/);
   assert.match(modUtils.script, /__fx\.customLobby\.setMapInfo/);
   assert.equal(modUtils.postMinifyHandlers.length, 1);
+
+  modUtils.script += deferredFixture;
+  modUtils.executePostMinifyHandlers();
+  assert.match(modUtils.script, /__fx\.customLobby\.isCustomMessage\(a0\)/);
+  assert.match(modUtils.script, /__fx\.customLobby\.setActive\(false\)/);
+  assert.match(modUtils.script, /__fx\.customLobby\.gameInfo\.difficulty/);
+  assert.match(modUtils.script, /__fx\.customLobby\.gameInfo\.spawnSelection/);
+  assert.match(modUtils.script, /__fx\.customLobby\.gameInfo\.botCount/);
 });
 
 test("resolves a renamed lobby global through the patch dictionary", () => {
@@ -76,4 +97,15 @@ test("fails when a required custom lobby anchor disappears", () => {
   const modUtils = makeModUtils(fixture.replace("this.ye = new Array(bV.aNY + 1);", "this.maps = [];"));
 
   assert.throws(() => customLobbyPatch(modUtils), /replaceCode match error|no match/);
+});
+
+test("fails when a required deferred custom lobby anchor disappears", () => {
+  const modUtils = makeModUtils();
+  customLobbyPatch(modUtils);
+  modUtils.script += deferredFixture.replace(
+    "this.xZ=function(){Sockets.kt.wf(3260),i___.kt.we()}",
+    "this.xZ=function(){Sockets.kt.wf(3261),i___.kt.we()}"
+  );
+
+  assert.throws(() => modUtils.executePostMinifyHandlers(), /replaceRawCode match error/);
 });

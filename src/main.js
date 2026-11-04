@@ -2,7 +2,7 @@ import versionData from '../version.json';
 const { version, lastUpdated, isSignificant } = versionData;
 
 import settingsManager from './settings.js';
-import "./lobbyEnhancements.js";
+import { initializeLobbyEnhancements } from "./lobbyEnhancements.js";
 import { clanFilter, leaderboardFilter } from "./clanFilters.js";
 import WindowManager from "./windowManager.js";
 import donationsTracker from "./donationsTracker.js";
@@ -15,7 +15,7 @@ import customLobby from './customLobby.js';
 import { displayChangelog } from './changelog.js';
 import { reportError } from './debugging.js';
 import replayHistory from './replayHistory.js';
-import replay from './replay.js';
+import replay, { initializeReplayTimebar } from './replay.js';
 import lobbyReminders from './lobbyReminders.js';
 import pingFilter from './pingFilter.js';
 import nameFilter from './nameFilter.js';
@@ -60,5 +60,8 @@ if (savedVersion !== version && !fxBridge.isCustomLobbyVersion) {
   localStorage.setItem("fx_version", version);
   if (savedVersion !== null && isSignificant) displayChangelog();
 }
+
+initializeLobbyEnhancements();
+initializeReplayTimebar();
 
 console.log('Successfully loaded FX Client');
