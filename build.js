@@ -5,19 +5,50 @@ import UglifyJS from 'uglify-js';
 import fs from 'fs';
 import webpack from 'webpack';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import ModUtils, { minifyCode } from './modUtils.js';
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+const buildPath = path.join(projectRoot, 'build');
+const stagingPath = path.join(projectRoot, `.build-staging-${process.pid}`);
+const backupPath = path.join(projectRoot, `.build-backup-${process.pid}`);
+const artefactsPath = path.join(stagingPath, 'build_artefacts.js');
 
 { // color debug output in gray
   const old_debug = console.debug
   console.debug = (...args) => old_debug("\x1b[90m", ...args, "\x1b[0m")
 }
 
-if (!fs.existsSync("./build")) fs.mkdirSync("./build");
-fs.cpSync("./static/", "./build/", { recursive: true });
-fs.cpSync("./assets/", "./build/assets/", { recursive: true });
-const buildTimestamp = Date.now().toString();
-fs.writeFileSync("./build/index.html", fs.readFileSync("./build/index.html").toString().replace(/buildTimestamp/g, buildTimestamp));
-fs.writeFileSync("./build/sw2.js", fs.readFileSync("./build/sw2.js").toString().replace("buildTimestamp", buildTimestamp));
+function prepareStagingDirectory() {
+	fs.rmSync(stagingPath, { recursive: true, force: true });
+	if (!fs.existsSync(buildPath) && fs.existsSync(backupPath)) fs.renameSync(backupPath, buildPath);
+	else fs.rmSync(backupPath, { recursive: true, force: true });
+	fs.mkdirSync(stagingPath, { recursive: true });
+	fs.cpSync(path.join(projectRoot, 'static'), stagingPath, { recursive: true });
+	fs.cpSync(path.join(projectRoot, 'assets'), path.join(stagingPath, 'assets'), { recursive: true });
+	const buildTimestamp = Date.now().toString();
+	const indexPath = path.join(stagingPath, 'index.html');
+	const serviceWorkerPath = path.join(stagingPath, 'sw2.js');
+	fs.writeFileSync(indexPath, fs.readFileSync(indexPath, 'utf8').replace(/buildTimestamp/g, buildTimestamp));
+	fs.writeFileSync(serviceWorkerPath, fs.readFileSync(serviceWorkerPath, 'utf8').replace('buildTimestamp', buildTimestamp));
+	return buildTimestamp;
+}
+
+function publishStagingDirectory() {
+	let movedExistingBuild = false;
+	try {
+		if (fs.existsSync(buildPath)) {
+			fs.renameSync(buildPath, backupPath);
+			movedExistingBuild = true;
+		}
+		fs.renameSync(stagingPath, buildPath);
+	} catch (error) {
+		if (movedExistingBuild && !fs.existsSync(buildPath) && fs.existsSync(backupPath))
+			fs.renameSync(backupPath, buildPath);
+		throw error;
+	}
+	if (movedExistingBuild) fs.rmSync(backupPath, { recursive: true, force: true });
+}
 
 const buildClientCode = () => /** @type {Promise<void>} */(new Promise((resolve, reject) => {
 	console.log("Building client code...");
@@ -25,7 +56,7 @@ const buildClientCode = () => /** @type {Promise<void>} */(new Promise((resolve,
 		mode: 'production',
 		entry: { fxClient: "./src/main.js" },
 		output: {
-			path: path.resolve(import.meta.dirname, 'build'),
+			path: stagingPath,
 			filename: 'fx.bundle.js',
 		},
 	}, (err, stats) => {
@@ -40,14 +71,14 @@ const buildClientCode = () => /** @type {Promise<void>} */(new Promise((resolve,
 			return reject("Webpack compilation error");
 		}
 		fs.writeFileSync(
-			"./build/fx.bundle.js",
-			Buffer.concat([fs.readFileSync("./game/build_artefacts.js"), fs.readFileSync("./build/fx.bundle.js")])
+			path.join(stagingPath, 'fx.bundle.js'),
+			Buffer.concat([fs.readFileSync(artefactsPath), fs.readFileSync(path.join(stagingPath, 'fx.bundle.js'))])
 		);
 		resolve();
 	});
 }));
 
-async function patchGameCode() {
+async function patchGameCode(buildTimestamp) {
 
 	let script = fs.readFileSync('./game/latest.js', { encoding: 'utf8' }).trim();
 	console.debug("Script start: ", script.slice(0, 250))
@@ -144,7 +175,7 @@ async function patchGameCode() {
 
 	// the dictionary should maybe get embedded into one of the files in the bundle
 	fs.writeFileSync(
-		"./game/build_artefacts.js",
+		artefactsPath,
 		`const buildTimestamp = "${buildTimestamp}"; const dictionary = ${JSON.stringify(dictionary)};\n`
 	);
 
@@ -171,11 +202,23 @@ async function patchGameCode() {
 		"indent_empty_lines": false
 	});
 
-	fs.writeFileSync("./build/game.js", script);
-	console.log("Wrote ./build/game.js");
+	fs.writeFileSync(path.join(stagingPath, 'game.js'), script);
+	console.log("Wrote staged game.js");
 }
 
-if (!process.argv.includes("--skip-patching")) await patchGameCode();
-if (!process.argv.includes("--patch-only")) await buildClientCode();
-
-console.log("Build done");
+try {
+	const buildTimestamp = prepareStagingDirectory();
+	if (process.argv.includes('--skip-patching')) {
+		const existingArtefacts = path.join(buildPath, 'build_artefacts.js');
+		if (!fs.existsSync(existingArtefacts))
+			throw new Error('Cannot build client only: no previous build_artefacts.js found. Run the full build first.');
+		fs.copyFileSync(existingArtefacts, artefactsPath);
+	}
+	if (!process.argv.includes('--skip-patching')) await patchGameCode(buildTimestamp);
+	if (!process.argv.includes('--patch-only')) await buildClientCode();
+	publishStagingDirectory();
+	console.log("Build done");
+} catch (error) {
+	fs.rmSync(stagingPath, { recursive: true, force: true });
+	throw error;
+}

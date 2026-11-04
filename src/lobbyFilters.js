@@ -1,3 +1,5 @@
+import { getGameMapNames } from "./gameInterface.js";
+
 const MAP_NAMES = ["White Arena", "Black Arena", "Island", "Mountains 1", "Desert", "Swamp",
     "White Plains", "Cliffs", "Pond", "Halo", "Europe", "World 1", "Caucasia", "Africa",
     "Middle East", "Scandinavia", "North America", "South America", "Asia", "Australia",
@@ -27,11 +29,6 @@ export const contestOptions = [
     { value: "yes", label: "Yes" },
     { value: "no", label: "No" }
 ];
-
-function getGameMapNames() {
-    const names = window[dictionary.mapHolder]?.[dictionary.mapInfo]?.[dictionary.mapNames];
-    return Array.isArray(names) && names.length ? names : null;
-}
 
 export function refreshMapOptions(selectElement) {
     const names = getGameMapNames();

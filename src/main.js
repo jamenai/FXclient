@@ -23,40 +23,42 @@ import followedAccounts from './followedAccounts.js';
 import passwordReset from './passwordReset.js';
 import savedAccounts from './savedAccounts.js';
 import { getVar } from "./gameInterface.js";
+import { publishFxBridge } from "./fxBridge.js";
 
-window.__fx = window.__fx || {};
-const __fx = window.__fx;
-__fx.version = version + " " + lastUpdated;
-__fx.isCustomLobbyVersion = window.location.href.startsWith("https://fxclient.github.io/custom-lobbies")
+// Stable bridge used by injected game patches. Keep this surface explicit:
+// patched game code must not reach into individual FX modules directly.
+const fxBridge = publishFxBridge(window, {
+  version: version + " " + lastUpdated,
+  isCustomLobbyVersion: window.location.href.startsWith("https://fxclient.github.io/custom-lobbies"),
+  settingsManager,
+  leaderboardFilter,
+  utils: gameScriptUtils,
+  WindowManager,
+  keybindFunctions,
+  keybindHandler,
+  mobileKeybinds,
+  donationsTracker,
+  reportError,
+  playerList,
+  hoveringTooltip,
+  clanFilter,
+  wins: winCounter,
+  customLobby,
+  replayHistory,
+  replay,
+  lobbyReminders,
+  pingFilter,
+  nameFilter,
+  followedAccounts,
+  passwordReset,
+  savedAccounts,
+  getGameVar: getVar,
+});
 
 const savedVersion = localStorage.getItem("fx_version");
-if (savedVersion !== version && !__fx.isCustomLobbyVersion) {
+if (savedVersion !== version && !fxBridge.isCustomLobbyVersion) {
   localStorage.setItem("fx_version", version);
   if (savedVersion !== null && isSignificant) displayChangelog();
 }
-
-__fx.settingsManager = settingsManager;
-__fx.leaderboardFilter = leaderboardFilter;
-__fx.utils = gameScriptUtils;
-__fx.WindowManager = WindowManager;
-__fx.keybindFunctions = keybindFunctions;
-__fx.keybindHandler = keybindHandler;
-__fx.mobileKeybinds = mobileKeybinds;
-__fx.donationsTracker = donationsTracker;
-__fx.reportError = reportError;
-__fx.playerList = playerList;
-__fx.hoveringTooltip = hoveringTooltip;
-__fx.clanFilter = clanFilter;
-__fx.wins = winCounter;
-__fx.customLobby = customLobby;
-__fx.replayHistory = replayHistory;
-__fx.replay = replay;
-__fx.lobbyReminders = lobbyReminders;
-__fx.pingFilter = pingFilter;
-__fx.nameFilter = nameFilter;
-__fx.followedAccounts = followedAccounts;
-__fx.passwordReset = passwordReset;
-__fx.savedAccounts = savedAccounts;
-__fx.getGameVar = getVar;
 
 console.log('Successfully loaded FX Client');

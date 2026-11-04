@@ -5,6 +5,7 @@ import versionData from '../version.json';
 import { displayChangelog } from './changelog.js';
 import replayHistory from './replayHistory.js'
 import { LobbyReminderRulesInput } from './lobbyReminderRulesInput.js';
+import { getGameEmojiTile } from "./gameInterface.js";
 
 window.__fx = window.__fx || {};
 const __fx = window.__fx;
@@ -158,7 +159,7 @@ const tileUrls = {};
 function tileFor(code) {
   if (code < ICON_BASE || code > MORE_CODE) return "";
   if (!tileUrls[code]) {
-    const canvas = window[dictionary.emojiHolder]?.[dictionary.emojiPicker]?.[dictionary.emojiTiles]?.[code - ICON_BASE];
+    const canvas = getGameEmojiTile(code - ICON_BASE);
     if (canvas) tileUrls[code] = canvas.toDataURL();
   }
   return tileUrls[code] || "";
