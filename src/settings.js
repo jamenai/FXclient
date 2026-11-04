@@ -21,11 +21,11 @@ const CustomQuickEmojis = createCustomQuickEmojis({
 const eliminationEstimateText = (navigator.language || "en").toLowerCase().startsWith("de")
   ? {
       label: "Gesch\u00e4tzte Angriffsmenge f\u00fcr vollst\u00e4ndige Vernichtung anzeigen",
-      note: "Grobe Sch\u00e4tzung: etwa das Doppelte der gegnerischen Resttruppen plus 2 Einheiten je verbleibendem Gebietspunkt. Der Prozentwert zeigt den Anteil deiner verf\u00fcgbaren Truppen; die Farbe wechselt ab dem einstellbaren Gr\u00fcnwert bis 100% zu Rot. Grenzverteidigung und weitere Frontkosten fehlen.",
+      note: "Grobe Sch\u00e4tzung: ein einstellbarer Faktor auf die gegnerischen Resttruppen plus 2 Einheiten je verbleibendem Gebietspunkt. Der Prozentwert zeigt den Anteil deiner verf\u00fcgbaren Truppen; die Farbe wechselt ab dem einstellbaren Gr\u00fcnwert bis 100% zu Rot. Grenzverteidigung und weitere Frontkosten fehlen.",
     }
   : {
       label: "Show estimated attack size for complete annihilation of a player",
-      note: "Rough estimate: about twice the enemy's remaining troops plus 2 units per remaining territory tile. The percentage shows the share of your available troops; the color shifts from the configurable green threshold to red at 100%. Border defense and other front costs are not included.",
+      note: "Rough estimate: a configurable multiplier applied to the enemy's remaining troops, plus 2 units per remaining territory tile. The percentage shows the share of your available troops; the color shifts from the configurable green threshold to red at 100%. Border defense and other front costs are not included.",
     };
 
 const fxText = {
@@ -363,6 +363,17 @@ const settingsManager = new (function () {
       type: "checkbox",
       label: eliminationEstimateText.label,
       note: eliminationEstimateText.note,
+    },
+    {
+      for: "estimatedAttackTroopMultiplier",
+      type: "rangeInput",
+      label: (navigator.language || "en").toLowerCase().startsWith("de")
+        ? "Faktor f\u00fcr gegnerische Resttruppen"
+        : "Enemy remaining troops multiplier",
+      min: 1,
+      max: 4,
+      step: 0.1,
+      unit: "\u00d7",
     },
     {
       for: "estimatedAttackGreenThreshold",

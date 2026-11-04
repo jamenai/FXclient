@@ -27,8 +27,12 @@ function getEstimatedEliminationAttackData(playerID, remainingBalance, remaining
     const territoryCount = Number.isFinite(remainingTerritories)
         ? Math.max(0, remainingTerritories)
         : getVar("playerTerritories")?.[playerID];
-    // The game model uses a 2:1 defender ratio and a base cost of two units per conquered tile.
-    const estimatedAttack = Math.ceil(balance * 2 + (Number.isFinite(territoryCount) ? territoryCount * 2 : 0));
+    // The multiplier estimates defender losses; the tile cost stays at two units per tile.
+    const configuredMultiplier = Number(getSettings().estimatedAttackTroopMultiplier);
+    const troopMultiplier = Number.isFinite(configuredMultiplier)
+        ? Math.max(1, Math.min(4, configuredMultiplier))
+        : 2;
+    const estimatedAttack = Math.ceil(balance * troopMultiplier + (Number.isFinite(territoryCount) ? territoryCount * 2 : 0));
     const ownPlayerID = getVar("playerId");
     const ownBalance = getVar("playerBalances")?.[ownPlayerID];
     const ownCommitted = getVar("playerCommitted")?.[ownPlayerID];

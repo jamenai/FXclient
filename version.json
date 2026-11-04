@@ -1,8 +1,8 @@
 {
-    "version": "0.1.1",
+    "version": "0.1.2",
     "lastUpdated": "November 4",
     "changes": [
-        "added a shorthand sidebar left"
+        "Configurable elimination attack estimate multiplier"
     ],
     "isSignificant": true
 }
