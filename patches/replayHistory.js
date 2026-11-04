@@ -9,7 +9,8 @@ export default definePatch(({ replaceRawCode, matchCode, insertCode, modifyCode 
 			this.a6l = bC.re.a6x;
 		} ${insert(`__fx.replayHistory.save(this.a6l);`)} /*...*/}`)
 
-  const { protocol, stripPrefix, parser, parseReplay, watchReplay } = matchCode(`
+  const { protocol, stripPrefix, parser, parseReplay, watchReplay, menuSystem, closeMenu,
+    textArea, getText, game, gameState, recorder, replayData, input } = matchCode(`
     function watchInput() {
       menuSystem.closeMenu();
       var input = protocol.stripPrefix(textArea.getText());
@@ -23,6 +24,21 @@ export default definePatch(({ replaceRawCode, matchCode, insertCode, modifyCode 
       protocol.watchReplay();
     }`)
 
+  modifyCode(`function watchInput() {
+    ${menuSystem}.${closeMenu}();
+    var ${input} = ${protocol}.${stripPrefix}(${textArea}.${getText}());
+    if (${game}.${gameState} && ${input}.length > 0 && ${input} === ${protocol}.${recorder}.${replayData}) {
+      /*insert line:*/ __fx.replayHistory.setActiveReplay(null);
+      ${protocol}.${watchReplay}();
+      return;
+    }
+    if (!${protocol}.${parser}.${parseReplay}(${input})) {
+      return;
+    }
+    /*insert line:*/ __fx.replayHistory.setActiveReplay(null);
+    ${protocol}.${watchReplay}();
+  }`)
+
   insertCode(`
     this.stripPrefix = function(text) {
       var index = text.indexOf("=");
@@ -35,8 +51,13 @@ export default definePatch(({ replaceRawCode, matchCode, insertCode, modifyCode 
       return text;
     };
     /* here */`,
-    `__fx.replayHistory.load = (saved) => {
+    `__fx.replayHistory.load = (saved, timestamp) => {
       saved = ${protocol}.${stripPrefix}(saved);
-      if (${protocol}.${parser}.${parseReplay}(saved)) ${protocol}.${watchReplay}();
+      if (${protocol}.${parser}.${parseReplay}(saved)) {
+        __fx.replayHistory.setActiveReplay(timestamp);
+        ${protocol}.${watchReplay}();
+      } else {
+        __fx.replayHistory.setActiveReplay(null);
+      }
     };`)
 })

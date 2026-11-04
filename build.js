@@ -210,9 +210,13 @@ try {
 	const buildTimestamp = prepareStagingDirectory();
 	if (process.argv.includes('--skip-patching')) {
 		const existingArtefacts = path.join(buildPath, 'build_artefacts.js');
+		const existingGameScript = path.join(buildPath, 'game.js');
 		if (!fs.existsSync(existingArtefacts))
 			throw new Error('Cannot build client only: no previous build_artefacts.js found. Run the full build first.');
+		if (!fs.existsSync(existingGameScript))
+			throw new Error('Cannot build client only: no previous patched game.js found. Run the full build first.');
 		fs.copyFileSync(existingArtefacts, artefactsPath);
+		fs.copyFileSync(existingGameScript, path.join(stagingPath, 'game.js'));
 	}
 	if (!process.argv.includes('--skip-patching')) await patchGameCode(buildTimestamp);
 	if (!process.argv.includes('--patch-only')) await buildClientCode();

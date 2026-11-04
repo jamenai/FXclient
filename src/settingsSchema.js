@@ -26,6 +26,7 @@ const defaultValues = Object.freeze({
   customQuickEmojis: [],
   lobbyReminderRules: [],
   enhancedLobbyLayout: true,
+  showClanLobbyDashboard: true,
   lobbyFontScale: 100,
   mutePingAll: false,
   mutePingEveryone: false,

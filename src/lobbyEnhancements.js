@@ -174,6 +174,11 @@ export function initializeLobbyEnhancements() {
     const playerCount = document.createElement("span");
     playerCount.setAttribute("aria-live", "polite");
     playerCount.style.cssText = "flex:0 0 auto;white-space:nowrap;opacity:.8;margin:.05em .35em 0 auto";
+    const clanDashboard = document.createElement("section");
+    clanDashboard.className = "fx-clan-lobby-dashboard";
+    clanDashboard.setAttribute("aria-label", translate("clanLobbyDashboard"));
+    clanDashboard.setAttribute("aria-live", "polite");
+    clanDashboard.style.cssText = "box-sizing:border-box;display:none;flex:1 1 100%;align-items:center;gap:.15em .5em;flex-wrap:wrap;min-width:0;margin:0 .25em;padding:.1em .15em;border:0;background:transparent;font-size:clamp(10px,.4em,12px);line-height:1.2;opacity:.9";
     const filterStorageKey = "fxclient:lobby-filters:v1";
     let sortFollowedFirst = false;
     let rankSortDirection = 0;
@@ -246,6 +251,87 @@ export function initializeLobbyEnhancements() {
       let total = 0;
       let shown = 0;
       let readyClanmate = false;
+      const clanRows = ownClan ? rows.filter(({ clan }) => clan === ownClan) : [];
+      const clanReadyCount = clanRows.filter(({ readiness }) => readiness === "ready").length;
+      const clanWaitingCount = clanRows.filter(({ readiness }) => readiness === "not-ready").length;
+      const clanUnknownCount = clanRows.length - clanReadyCount - clanWaitingCount;
+      const dashboardEnabled = window.__fx?.settings?.showClanLobbyDashboard !== false;
+      clanDashboard.style.display = dashboardEnabled && ownClan ? "flex" : "none";
+      const dashboardState = JSON.stringify([
+        dashboardEnabled,
+        ownClan,
+        clanReadyCount,
+        clanWaitingCount,
+        clanUnknownCount,
+        readyFilter.value,
+        followedFilter.value,
+        clanFilter.value,
+        search.value,
+        clanRows.map(({ row, readiness }) => [row.dataset.fxAccountName, row.textContent, readiness]),
+      ]);
+      if (clanDashboard.dataset.fxState !== dashboardState) {
+        clanDashboard.dataset.fxState = dashboardState;
+        clanDashboard.replaceChildren();
+        if (dashboardEnabled && ownClan) {
+        const title = document.createElement("strong");
+        title.textContent = `[${ownClan}]`;
+        clanDashboard.append(title);
+        const createClanFilterAction = (label, readiness) => {
+          const action = document.createElement("button");
+          action.type = "button";
+          action.dataset.fxClanFilter = readiness;
+          action.textContent = label;
+          action.setAttribute("aria-pressed", String(
+            clanFilter.value === "my-clan" && readyFilter.value === readiness
+              && followedFilter.value === "all" && search.value === ""
+          ));
+          action.style.cssText = `padding:0 .2em;border:0;border-radius:3px;background:${action.getAttribute("aria-pressed") === "true" ? "rgba(45,120,70,.35)" : "transparent"};color:inherit;font:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px`;
+          action.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            search.value = "";
+            readyFilter.value = readiness;
+            followedFilter.value = "all";
+            clanFilter.value = "my-clan";
+            persistFilterState();
+            applyFilterNow();
+          });
+          return action;
+        };
+        const summary = createClanFilterAction(translate("clanReadySummary")
+          .replace("{ready}", String(clanReadyCount))
+          .replace("{total}", String(clanRows.length)), "ready");
+        summary.setAttribute("aria-label", translate("clanReadyFilterAction"));
+        clanDashboard.append(title, summary);
+        if (clanWaitingCount > 0) {
+          const waiting = createClanFilterAction(translate("clanWaitingSummary").replace("{count}", String(clanWaitingCount)), "not-ready");
+          waiting.setAttribute("aria-label", translate("clanWaitingFilterAction"));
+          clanDashboard.append(waiting);
+        }
+        if (clanUnknownCount > 0) {
+          const unknown = document.createElement("span");
+          unknown.textContent = translate("readinessUnknown") + `: ${clanUnknownCount}`;
+          clanDashboard.append(unknown);
+        }
+        const memberList = document.createElement("span");
+        memberList.style.cssText = "display:flex;flex:1 1 12em;flex-wrap:wrap;gap:.15em .4em;min-width:0;overflow:hidden";
+        for (const { row, readiness } of clanRows) {
+          const member = document.createElement("span");
+          const name = row.dataset.fxAccountName || row.textContent.trim();
+          const status = document.createElement("span");
+          status.setAttribute("aria-hidden", "true");
+          status.style.cssText = `display:inline-block;flex:0 0 .42em;width:.42em;height:.42em;margin-right:.25em;border-radius:50%;vertical-align:middle;background:${readiness === "ready" ? "#55d98b" : readiness === "not-ready" ? "#aaa" : "#e0b34c"}`;
+          member.append(status, document.createTextNode(name || translate("unknownPlayer")));
+          const readinessLabel = readiness === "ready" ? translate("ready")
+            : readiness === "not-ready" ? translate("notReady") : translate("readinessUnknown");
+          member.setAttribute("aria-label", `${name || translate("unknownPlayer")}: ${readinessLabel}`);
+          member.title = `${name || translate("unknownPlayer")}: ${readinessLabel}`;
+          member.style.cssText = "display:inline-flex;align-items:center;max-width:11em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
+          memberList.append(member);
+        }
+        if (clanRows.length) clanDashboard.append(memberList);
+        }
+      }
       const sortingActive = sortFollowedFirst || (rankSortDirection !== 0 && hasRankData);
       const orderedRows = rows.slice();
       if (sortingActive) {
@@ -381,7 +467,7 @@ export function initializeLobbyEnhancements() {
     resetFilters.style.fontSize = followedFirst.style.fontSize = rankSort.style.fontSize = filterFontSize();
     resetFilters.style.borderWidth = followedFirst.style.borderWidth = rankSort.style.borderWidth = ".5px";
     playerCount.style.fontSize = `clamp(10px, ${0.34 * fontScale()}em, 12px)`;
-    controls.append(search, readyFilter, followedFilter, clanFilter, followedFirst, rankSort, resetFilters, playerCount);
+    controls.append(clanDashboard, search, readyFilter, followedFilter, clanFilter, followedFirst, rankSort, resetFilters, playerCount);
     list.parentElement.insertBefore(controls, list);
     let lobbyRoot = list.parentElement;
     for (let depth = 0; lobbyRoot.parentElement && depth < 2; depth++) lobbyRoot = lobbyRoot.parentElement;
@@ -411,7 +497,13 @@ export function initializeLobbyEnhancements() {
       thinLobbyBorders();
       scheduleApplyFilter();
     });
-    const borderObserver = new MutationObserver(scheduleLobbyRefresh);
+    const borderObserver = new MutationObserver(records => {
+      const onlyDashboardChanges = records.length > 0 && records.every(record => {
+        const target = record.target instanceof Element ? record.target : record.target.parentElement;
+        return target?.closest(".fx-clan-lobby-dashboard") != null;
+      });
+      if (!onlyDashboardChanges) scheduleLobbyRefresh();
+    });
     borderObserver.observe(lobbyRoot, {
       attributes: true,
       attributeFilter: ["class", "style"],

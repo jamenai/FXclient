@@ -1,6 +1,7 @@
 import { getVar } from "./gameInterface.js";
 import { getSettings } from "./settings.js";
 import hoveringTooltip from "./hoveringTooltip.js";
+import replayHistory from "./replayHistory.js";
 
 const replay = {
     totalTicks: 0,
@@ -89,10 +90,19 @@ export function initializeReplayTimebar() {
     const totalTime = createElement("span", "replay-time color-light-gray", bar);
     const fill = createElement("div", "replay-fill", track);
     const marker = createElement("div", "replay-target d-none", track);
+    const markerLayer = createElement("div", "fx-replay-markers", track);
+    markerLayer.style.cssText = "position:absolute;inset:0;pointer-events:none";
+    const bookmarkButton = createElement("button", "fx-replay-bookmark", bar);
+    bookmarkButton.type = "button";
+    bookmarkButton.textContent = window.__fx?.translateFX?.("addReplayNote") ?? "Add note";
+    bookmarkButton.style.cssText = "flex:0 0 auto;padding:.2em .4em;border:1px solid rgba(255,255,255,.4);border-radius:3px;background:rgba(0,0,0,.35);color:inherit;font:inherit;font-size:.8em;cursor:pointer";
 
     let drag = null;
     let active = true;
     let frameId = 0;
+    let activeReplayTimestamp = null;
+    let activeMarkers = [];
+    let markerTotal = -1;
     const trackFraction = event => {
         const rect = track.getBoundingClientRect();
         if (!rect.width) return 0;
@@ -126,11 +136,60 @@ export function initializeReplayTimebar() {
         return minutes + (seconds < 10 ? ":0" : ":") + seconds;
     };
 
+    function renderMarkers(total) {
+        markerLayer.replaceChildren();
+        markerTotal = total;
+        if (!total) return;
+        for (const replayMarker of activeMarkers) {
+            const markerButton = document.createElement("button");
+            markerButton.type = "button";
+            markerButton.style.cssText = `position:absolute;top:50%;left:${Math.min(replayMarker.tick / total, 1) * 100}%;width:8px;height:18px;padding:0;transform:translate(-50%,-50%);border:0;border-radius:2px;background:#ffd166;pointer-events:auto;cursor:pointer`;
+            markerButton.title = `${formatTime(replayMarker.timeMs ?? replayMarker.tick * replay.getTickDuration())} - ${replayMarker.note}`;
+            markerButton.setAttribute("aria-label", markerButton.title);
+            markerButton.addEventListener("pointerdown", event => event.stopPropagation());
+            markerButton.addEventListener("click", event => {
+                event.stopPropagation();
+                replay.seek(replayMarker.tick);
+            });
+            markerLayer.append(markerButton);
+        }
+    }
+
+    bookmarkButton.addEventListener("click", () => {
+        const timestamp = replayHistory.getActiveReplayTimestamp();
+        if (timestamp === null) {
+            alert(window.__fx?.translateFX?.("loadSavedReplayForNotes") ?? "Load a saved replay before adding notes.");
+            return;
+        }
+        const timeMs = replay.tick * replay.getTickDuration();
+        const note = prompt(
+            (window.__fx?.translateFX?.("replayNotePrompt") ?? "Note for") + ` ${formatTime(timeMs)}:`,
+        );
+        if (note === null) return;
+        if (!replayHistory.addMarker(timestamp, replay.tick, note, timeMs)) {
+            alert(window.__fx?.translateFX?.("replayNoteLimitReached") ?? "The note is empty or the replay already has 100 notes.");
+            return;
+        }
+        activeMarkers = replayHistory.getMarkers(timestamp);
+        markerTotal = -1;
+    });
+
     function updateBar() {
         if (!active) return;
         frameId = requestAnimationFrame(updateBar);
         const visible = getSettings().showReplayTimebar && replay.isWatching() && !getVar("uiHidden");
         bar.classList.toggle("d-none", !visible);
+        const replayTimestamp = replayHistory.getActiveReplayTimestamp();
+        bookmarkButton.disabled = replayTimestamp === null;
+        bookmarkButton.style.opacity = bookmarkButton.disabled ? ".5" : "1";
+        bookmarkButton.title = bookmarkButton.disabled
+            ? (window.__fx?.translateFX?.("loadSavedReplayForNotes") ?? "Load a saved replay before adding notes.")
+            : "";
+        if (replayTimestamp !== activeReplayTimestamp) {
+            activeReplayTimestamp = replayTimestamp;
+            activeMarkers = activeReplayTimestamp === null ? [] : replayHistory.getMarkers(activeReplayTimestamp);
+            markerTotal = -1;
+        }
         if (!visible) {
             drag = null;
             return;
@@ -140,6 +199,7 @@ export function initializeReplayTimebar() {
         if (panelTop > 0) bar.style.bottom = Math.max(0, Math.round(window.innerHeight - panelTop / scale) + 8) + "px";
 
         const total = replay.getTotalTicks();
+        if (markerTotal !== total) renderMarkers(total);
         const seeking = replay.seekTarget !== null && total !== 0;
         let fraction = total ? Math.min(replay.tick / total, 1) : 0;
         if (drag !== null) fraction = drag;

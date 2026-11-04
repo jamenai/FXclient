@@ -39,7 +39,7 @@ export function createReplayHistoryList({ history, closeSettings, saveFile, crea
   
         const loadBtn = createButton("Load", () => {
           closeSettings();
-          history.load(replay.data);
+          history.load(replay.data, replay.timestamp);
         })
         const copyBtn = createButton("Copy", () => {
             copyToClipboard(replay.data).then(() => {
@@ -56,7 +56,37 @@ export function createReplayHistoryList({ history, closeSettings, saveFile, crea
         )
         row.append(label, loadBtn, copyBtn, downloadBtn, deleteBtn);
         list.append(row);
+
+        const markers = history.getMarkers?.(replay.timestamp) ?? [];
+        if (markers.length) {
+          const notes = document.createElement("details");
+          const summary = document.createElement("summary");
+          summary.innerText = `${window.__fx?.translateFX?.("replayMarkers") ?? "Replay notes"} (${markers.length})`;
+          notes.append(summary);
+          for (const marker of markers) {
+            const markerRow = document.createElement("div");
+            markerRow.style.cssText = "display:flex;align-items:center;gap:6px;margin:3px 0 3px 12px";
+            const text = document.createElement("small");
+            const time = Number.isFinite(marker.timeMs) ? formatReplayTime(marker.timeMs) : `Tick ${marker.tick}`;
+            text.textContent = `${time} - ${marker.note}`;
+            text.style.flex = "1";
+            const removeMarkerButton = createButton(window.__fx?.translateFX?.("removeReplayMarker") ?? "Remove", () => {
+              history.removeMarker(replay.timestamp, marker.id);
+              render();
+            });
+            markerRow.append(text, removeMarkerButton);
+            notes.append(markerRow);
+          }
+          list.append(notes);
+        }
       });
+    }
+
+    function formatReplayTime(timeMs) {
+      const seconds = Math.floor(timeMs / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const remainder = seconds % 60;
+      return `${minutes}:${String(remainder).padStart(2, "0")}`;
     }
   
     this.update = render;
