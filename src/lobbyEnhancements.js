@@ -206,6 +206,7 @@ export function initializeLobbyEnhancements() {
     followedFirst.style.backgroundColor = sortFollowedFirst ? "rgba(20,90,45,.85)" : "rgba(0,0,0,.65)";
     rankSort.setAttribute("aria-pressed", String(rankSortDirection !== 0));
     rankSort.textContent = translate(rankSortDirection === -1 ? "rankWorstFirst" : "rankBestFirst");
+    rankSort.title = rankSort.textContent;
     rankSort.style.backgroundColor = rankSortDirection ? "rgba(20,90,45,.85)" : "rgba(0,0,0,.65)";
 
     const applyFilterNow = () => {
@@ -214,8 +215,9 @@ export function initializeLobbyEnhancements() {
       const playerId = window.__fx?.getGameVar?.("playerId");
       const ownName = window.__fx?.getGameVar?.("rawPlayerNames")?.[playerId];
       const originalChildren = Array.from(list.children);
-      const rows = originalChildren.filter(isPlayerRow).map(row => ({
+      const rows = originalChildren.filter(isPlayerRow).map((row, originalIndex) => ({
         row,
+        originalIndex,
         isFollowed: isFollowedPlayer(row),
         readiness: syncLobbyReadiness(row),
         rank: Number(row.dataset.fxRank),
@@ -223,7 +225,7 @@ export function initializeLobbyEnhancements() {
       }));
       const hasRankData = rows.some(({ rank }) => Number.isFinite(rank) && rank > 0);
       rankSort.disabled = !hasRankData;
-      rankSort.title = hasRankData ? "" : translate("rankUnavailable");
+      rankSort.title = hasRankData ? rankSort.textContent : translate("rankUnavailable");
       rankSort.style.opacity = hasRankData ? "1" : ".55";
       rankSort.style.cursor = hasRankData ? "pointer" : "not-allowed";
       if (!hasRankData && rankSortDirection !== 0) {
@@ -252,12 +254,13 @@ export function initializeLobbyEnhancements() {
             const followedDifference = Number(b.isFollowed) - Number(a.isFollowed);
             if (followedDifference) return followedDifference;
           }
-          if (!rankSortDirection) return 0;
+          if (!rankSortDirection) return a.originalIndex - b.originalIndex;
           const validA = Number.isFinite(a.rank) && a.rank > 0;
           const validB = Number.isFinite(b.rank) && b.rank > 0;
           if (validA !== validB) return validA ? -1 : 1;
-          if (!validA) return 0;
-          return (a.rank - b.rank) * rankSortDirection;
+          if (!validA) return a.originalIndex - b.originalIndex;
+          const rankDifference = (a.rank - b.rank) * rankSortDirection;
+          return rankDifference || a.originalIndex - b.originalIndex;
         });
       }
       const orderByRow = new Map(orderedRows.map(({ row }, index) => [row, String(index)]));

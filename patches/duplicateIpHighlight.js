@@ -13,6 +13,12 @@ export default definePatch(({ replaceRawCode, matchRawCode, matchCode }) => {
         `function handler(frag,entry,isOnline,roomIndex){var row=document.createElement("span");row.textContent=(isOnline?"🟢 ":"⚪ ")+container3.lb2.formatFn(entry,roomIndex);`
     );
 
+    // Resolve the rank argument passed to the lobby's rank formatter. The
+    // separate role field controls account-name colors and is not the rank.
+    const { rankField } = matchRawCode(
+        `var text=entry.username;text+="   "+container.lj.aGD(entry.roleField,entry.rankField,entry.levelField);`
+    );
+
     const { ownEntry } = matchRawCode(
         `this.isSelf=function(entry){if(!state.ownEntry){return false}return entry.idField===state.ownEntry.idField};`
     );
@@ -29,7 +35,20 @@ export default definePatch(({ replaceRawCode, matchRawCode, matchCode }) => {
         s0.dataset.fxAccountName = __fxAccountName;
         s0.dataset.fxSelf = bq.lJ.ub(qu) ? "true" : "false";
         s0.dataset.fxLobbyPlayer = "true";
-        s0.dataset.fxRank = __fx.utils.getLobbyPlayerRank(qu) ?? "";
+        s0.dataset.fxRank = __fx.utils.getLobbyPlayerRank(qu.${rankField}) ?? "";
+        if (s0.dataset.fxRank) {
+            s0.dataset.fxRankLabel = "#" + s0.dataset.fxRank;
+            s0.classList.add("fx-lobby-rank-label");
+            if (!document.getElementById("fx-lobby-rank-label-style")) {
+                const __fxRankStyle = document.createElement("style");
+                __fxRankStyle.id = "fx-lobby-rank-label-style";
+                __fxRankStyle.textContent = ".fx-lobby-rank-label::after{content:attr(data-fx-rank-label);display:inline-block;margin-left:.3em;padding:0 .2em;border-radius:.25em;background:rgba(255,255,255,.1);font-size:.72em;line-height:1.25;vertical-align:middle;opacity:.78}";
+                document.head.appendChild(__fxRankStyle);
+            }
+        } else {
+            delete s0.dataset.fxRankLabel;
+            s0.classList.remove("fx-lobby-rank-label");
+        }
         __fx.followedAccounts.setAccountNamesProvider(() => ${storage}.${followList}.get());
         __fx.followedAccounts.syncAccountNames(${storage}.${followList}.get());
         const __fxFollowed = __fx.followedAccounts.getLobbyDetails(__fxAccountName);
@@ -57,6 +76,6 @@ export default definePatch(({ replaceRawCode, matchRawCode, matchCode }) => {
             }
         }
         __fxIsFollowed&&(s0.style.textDecoration="underline");`,
-        { uT: grouping, uU: teamsArray, ipField, username, roomIndex, ownEntry }
+        { uT: grouping, uU: teamsArray, ipField, username, roomIndex, ownEntry, rankField }
     );
 });

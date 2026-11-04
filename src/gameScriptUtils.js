@@ -12,11 +12,8 @@ function getDensity(playerID, playerBalances = getVar("playerBalances"), playerT
     if (getSettings().densityDisplayStyle === "percentage") return (((playerBalances[playerID] / ((playerTerritories[playerID] === 0 ? 1 : playerTerritories[playerID]) * 150)) * 100).toFixed(1) + "%");
     else return (playerBalances[playerID] / (playerTerritories[playerID] === 0 ? 1 : playerTerritories[playerID])).toFixed(1);
 };
-// `qw` is an opaque field in the game's lobby-player data, not a local variable name.
-const lobbyPlayerRankField = "qw";
-function getLobbyPlayerRank(player) {
-    if (!player || !Object.prototype.hasOwnProperty.call(player, lobbyPlayerRankField)) return null;
-    const rank = player[lobbyPlayerRankField];
+function getLobbyPlayerRank(rankValue) {
+    const rank = typeof rankValue === "number" ? rankValue : Number(rankValue);
     return Number.isFinite(rank) && rank >= 0 ? rank + 1 : null;
 }
 const estimatedAttackFormatter = new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 });
