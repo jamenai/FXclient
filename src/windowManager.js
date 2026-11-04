@@ -54,6 +54,7 @@ function closeAll() {
 document.addEventListener(
   "mousedown",
   (e) => {
+    if (e.target instanceof Element && e.target.closest("#fx-sidebar")) return;
     // when clicking outside a window
     if (!container.contains(e.target)) closeAll();
 

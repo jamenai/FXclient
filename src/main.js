@@ -23,6 +23,8 @@ import followedAccounts from './followedAccounts.js';
 import passwordReset from './passwordReset.js';
 import savedAccounts from './savedAccounts.js';
 import { installSelfTerritoryHighlight } from "./selfTerritoryHighlight.js";
+import { initializeWorldClock } from "./worldClock.js";
+import { createSidebar } from "./sidebar.js";
 import { getVar } from "./gameInterface.js";
 import { publishFxBridge } from "./fxBridge.js";
 
@@ -65,5 +67,8 @@ if (savedVersion !== version && !fxBridge.isCustomLobbyVersion) {
 
 initializeLobbyEnhancements();
 initializeReplayTimebar();
+const sidebar = createSidebar();
+fxBridge.sidebar = sidebar;
+initializeWorldClock(sidebar.getClockSlot(), sidebar.isCollapsed);
 
 console.log('Successfully loaded FX Client');

@@ -195,6 +195,341 @@ td {
 	overflow: hidden;
 }
 
+#fx-game-shell {
+	position: fixed;
+	inset: 0 0 0 var(--fx-sidebar-width, 0px);
+	z-index: 0;
+	transform: translateZ(0);
+}
+
+#canvasA {
+	position: fixed;
+	top: 0;
+	left: 0;
+}
+
+#fx-sidebar {
+	position: fixed;
+	inset: 0 auto 0 0;
+	z-index: 25;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 10px 7px;
+	overflow: hidden;
+	border-right: 1px solid rgba(255, 255, 255, .72);
+	background: rgba(7, 10, 20, .82);
+	backdrop-filter: blur(8px);
+	color: #fff;
+	font: 13px/1.3 system-ui, sans-serif;
+	transition: width .18s ease;
+}
+
+#fx-sidebar[hidden] {
+	display: none;
+}
+
+#fx-sidebar-restore {
+	position: fixed;
+	left: 0;
+	top: 50%;
+	z-index: 26;
+	display: none;
+	width: 28px;
+	min-height: 54px;
+	transform: translateY(-50%);
+	justify-content: center;
+	padding: 4px 2px;
+	border: 1px solid rgba(255, 255, 255, .72);
+	border-left: 0;
+	border-radius: 0 6px 6px 0;
+	background: rgba(7, 10, 20, .88);
+}
+
+#fx-sidebar-restore[hidden] {
+	display: none;
+}
+
+html[data-fx-sidebar-hidden="true"] #fx-sidebar-restore {
+	display: flex;
+}
+
+.fx-sidebar-heading {
+	padding: 7px 6px;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: .08em;
+	white-space: nowrap;
+}
+
+.fx-sidebar-button {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 38px;
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 7px 9px;
+	border: 1px solid rgba(255, 255, 255, .58);
+	border-radius: 2px;
+	background: rgba(0, 0, 0, .12);
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.fx-sidebar-button:hover,
+.fx-sidebar-button:focus-visible {
+	border-color: rgba(255, 255, 255, .96);
+	background: rgba(255, 255, 255, .08);
+	outline: none;
+}
+
+.fx-sidebar-mode-actions {
+	margin-top: auto;
+	display: flex;
+	gap: 4px;
+	padding-top: 8px;
+	border-top: 1px solid rgba(255, 255, 255, .58);
+}
+
+.fx-sidebar-mode-action {
+	width: auto;
+	min-width: 0;
+	min-height: 32px;
+	flex: 1 1 0;
+	padding: 4px 6px;
+	border-color: rgba(255, 255, 255, .58);
+	border-radius: 2px;
+	font-size: 11px;
+}
+
+.fx-sidebar-mode-icon {
+	width: 16px;
+	flex: 0 0 16px;
+	font-size: 14px;
+	font-weight: 700;
+	text-align: center;
+}
+
+.fx-sidebar-mode-label {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+@media (max-width: 700px) {
+	#fx-sidebar.is-expanded {
+		box-shadow: 6px 0 24px rgba(0, 0, 0, .48);
+	}
+}
+
+.fx-sidebar-navigation {
+	display: flex;
+	flex-direction: column;
+	gap: 9px;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+.fx-sidebar-navigation[hidden] {
+	display: none;
+}
+
+.fx-sidebar-section {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.fx-sidebar-section + .fx-sidebar-section {
+	padding-top: 8px;
+	border-top: 1px solid rgba(255, 255, 255, .42);
+}
+
+.fx-sidebar-section-heading {
+	padding: 0 5px 2px;
+	color: rgba(255, 255, 255, .72);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: .1em;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.fx-sidebar-icon {
+	width: 20px;
+	flex: 0 0 20px;
+	font-weight: 700;
+	text-align: center;
+}
+
+.fx-sidebar-icon svg {
+	display: block;
+}
+
+.fx-sidebar-label {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.fx-sidebar-clock {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	padding: 8px 6px;
+	border-block: 1px solid rgba(255, 255, 255, .58);
+	color: rgba(255, 255, 255, .8);
+	font-variant-numeric: tabular-nums;
+}
+
+.fx-sidebar-lobby {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 5px;
+	padding: 7px 5px 9px;
+	border-bottom: 1px solid rgba(255, 255, 255, .58);
+}
+
+.fx-sidebar-lobby[hidden],
+.fx-sidebar-clan-join[hidden] {
+	display: none;
+}
+
+.fx-sidebar-lobby-heading {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: .05em;
+	text-transform: uppercase;
+	opacity: .72;
+}
+
+.fx-sidebar-lobby-summary {
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+	line-height: 1.4;
+}
+
+.fx-sidebar-clan-join {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	min-height: 26px;
+	padding: 2px 7px;
+	border: 1px solid rgba(255, 255, 255, .78);
+	border-radius: 2px;
+	background: rgba(25, 95, 65, .38);
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+}
+
+.fx-sidebar-clan-join:hover,
+.fx-sidebar-clan-join:focus-visible {
+	background: rgba(35, 125, 80, .7);
+	outline: none;
+}
+
+.fx-world-clock {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	font-size: 11px;
+	white-space: nowrap;
+}
+
+.fx-world-clock svg {
+	flex: 0 0 auto;
+}
+
+#fx-sidebar.is-collapsed {
+	padding-inline: 5px;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-heading {
+	font-size: 0;
+	padding: 0;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-button {
+	justify-content: center;
+	padding-inline: 2px;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-mode-label {
+	display: none;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-mode-action {
+	justify-content: center;
+	padding-inline: 1px;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-label {
+	display: none;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-section-heading {
+	display: none;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-clock {
+	padding-inline: 0;
+	font-size: 9px;
+	text-align: center;
+}
+
+#fx-sidebar.is-collapsed .fx-world-clock {
+	gap: 3px;
+}
+
+#fx-sidebar.is-collapsed .fx-world-clock svg {
+	width: 12px;
+	height: 12px;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-lobby {
+	align-items: center;
+	gap: 4px;
+	padding: 4px 0;
+	border-bottom: 0;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-lobby-heading {
+	display: none;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-lobby-summary {
+	font-size: 10px;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-clan-join {
+	width: 30px;
+	min-height: 27px;
+	padding: 2px;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-clan-join span {
+	display: none;
+}
+
+#windowContainer .window {
+	left: 0;
+	width: 90%;
+	right: 0;
+	margin-left: auto;
+	margin-right: auto;
+}
+
 .playerlist-toolbar {
 	display: flex;
 	align-items: center;

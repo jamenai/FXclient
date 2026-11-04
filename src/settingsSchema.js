@@ -1,6 +1,8 @@
 const defaultValues = Object.freeze({
   displayWinCounter: true,
   displayTickNumber: true,
+  showWorldClock: true,
+  showSidebar: true,
   useFullscreenMode: false,
   hoveringTooltip: true,
   realisticNames: false,

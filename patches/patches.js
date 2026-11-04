@@ -1,6 +1,16 @@
 import assets from '../assets.js';
 import ModUtils from '../modUtils.js';
 
+function replaceRequired(modUtils, expression, replacement, featureName) {
+    if (!expression.global) throw new Error(`${featureName}: expected a global regular expression`);
+    const matches = Array.from(modUtils.script.matchAll(expression)).length;
+    if (matches === 0) {
+        throw new Error(`[Sidebar integration] Expected to patch ${featureName}, but found no matching game code.`);
+    }
+    modUtils.replace(expression, replacement);
+    return matches;
+}
+
 export default (/** @type {ModUtils} */ modUtils) => {
     const { insertCode, waitForMinification } = modUtils
 
@@ -33,7 +43,8 @@ export default (/** @type {ModUtils} */ modUtils) => {
 }
 //export const requiredVariables = ["game", "playerId", "playerData", "rawPlayerNames", "gIsSingleplayer", "playerTerritories"];
 
-function applyPatches(/** @type {ModUtils} */ { replace, replaceOne, replaceRawCode, safeDictionary, matchOne, matchRawCode, escapeRegExp }) {
+function applyPatches(/** @type {ModUtils} */ modUtils) {
+    const { replace, replaceOne, replaceRawCode, safeDictionary, matchOne, matchRawCode, escapeRegExp } = modUtils;
 
     // Constants for easy usage of otherwise long variable access expressions
     const dict = safeDictionary;
@@ -135,6 +146,76 @@ function applyPatches(/** @type {ModUtils} */ { replace, replaceOne, replaceRawC
     replaceRawCode(`qr=Math.floor(100*f0+.5)+"%"`,
         `qr = (__fx.settings.detailedTeamPercentage ? (100*f0).toFixed(2) : Math.floor(100*f0+.5)) + "%"`)
     replaceRawCode(",fontSize=+dz*Math.min(f0,.37);", ",fontSize=(__fx.settings.detailedTeamPercentage ? 0.75 : 1)*dz*Math.min(f0,.37);")
+
+    // Reserve the sidebar width in the game's logical viewport and keep mouse/touch coordinates aligned.
+    replaceOne(/document\.body\.firstChild/g, 'document.getElementById("fx-game-shell").firstChild');
+    const { socketManager, closeConnections } = matchOne(
+        /(?<socketManager>\w+\.\w+)\.(?<closeConnections>\w+)\(3260\)/g
+    ).groups;
+    const { isConnectedMethod } = matchOne(
+        /this\.(?<isConnectedMethod>\w+)=function\(\w+\)\{return \w+\[\w+\]\.\w+&&\w+\[\w+\]\.\w+\(\);?\}/g
+    ).groups;
+    const socketActivePattern = /function (?<activeSocketMethod>\w+)\((?<socketIndex>\w+)\)\{return \w+\[\k<socketIndex>\]\.\w+&&\w+\[\k<socketIndex>\]\.\w+\(\)\}/g;
+    const { activeSocketMethod } = matchOne(socketActivePattern).groups;
+    replaceOne(socketActivePattern, `$&;window.__fx.isSocketActive=id=>${activeSocketMethod}(id)`);
+    const socketCloseHandlerPattern = /this\.(?<handler>\w+)=function\((?<socketIndex>\w+),(?<errorCode>\w+)\)\{(?=if\(console\.log\("socket close index "\+\k<socketIndex>\+" error "\+\k<errorCode>\),)/g;
+    const { errorCode } = matchOne(socketCloseHandlerPattern).groups;
+    replaceOne(
+        socketCloseHandlerPattern,
+        `$&if(${errorCode}===4215&&__fx.multiplayerRetryAvailableUntil>Date.now()){__fx.multiplayerRetryAvailableUntil=0;${socketManager}.${closeConnections}(3260);__fx.multiplayerResetUntil=Date.now()+1000;__fx.multiplayerStartPending=true;setTimeout(()=>{__fx.multiplayerStartPending=false;__fx.startMultiplayer(true)},1050);return;}`
+    );
+    const homeMethodPattern = /this\.(?<homeMethod>\w+)=function\(\)\{(?<menuManager>\w+)\.\w+\(5,5\)\}/g;
+    const { menuManager } = matchOne(homeMethodPattern).groups;
+    replaceOne(
+        homeMethodPattern,
+        `$&,window.__fx.openHome=()=>{${socketManager}.${closeConnections}(3260);__fx.multiplayerResetUntil=Date.now()+1000;this.$<homeMethod>()}`
+    );
+    const accountMenuButtonsPattern = /for\(var (?<index>\w+)=0;\k<index><(?<buttons>\w+)\.length;\k<index>\+\+\)\k<buttons>\[\k<index>\]\.button\.style\.position="absolute";/g;
+    const { buttons: accountMenuButtons } = matchOne(accountMenuButtonsPattern).groups;
+    const { openMenuAction } = matchOne(
+        /function (?<openMenuAction>\w+)\(\w+\)\{\w+\.\w+\.setState\(10\)/g
+    ).groups;
+    replaceOne(accountMenuButtonsPattern, `$&__fx.openAccount=function(){${accountMenuButtons}[2].button.click()};__fx.startMultiplayer=function(isRetry){if(__fx.multiplayerStartPending)return;if(!isRetry)__fx.multiplayerRetryAvailableUntil=Date.now()+10000;var wait=__fx.multiplayerResetUntil-Date.now();if(wait>0){__fx.multiplayerStartPending=true;setTimeout(()=>{__fx.multiplayerStartPending=false;__fx.startMultiplayer(isRetry)},wait+50);return;}if(__fx.isSocketActive(0)){if(${socketManager}.${isConnectedMethod}(0))${accountMenuButtons}[0].button.click();return;}${accountMenuButtons}[0].button.click()};__fx.openGameMenuAction=function(key){${openMenuAction}(3);__fx.gameMenuActions?.[key]?.()};`);
+    const gameMenuActionsPattern = /(?<buttons>\w+)\s*=\s*\[new\s+x\(L\(481\),[\s\S]*?\](?=\s*,\s*\w+\s*=\s*\[)/g;
+    const { buttons: gameMenuButtons } = matchOne(gameMenuActionsPattern).groups;
+    replaceOne(
+        gameMenuActionsPattern,
+        `$&,window.__fx.runSidebarGameMenuAction=(key,labelId)=>{var label=L(labelId);var item=${gameMenuButtons}.find(entry=>entry.button.textContent.includes(label));if(!item){console.error("[FXClient] Sidebar menu action is unavailable after a game update:",key);return false;}item.button.click();return true;};window.__fx.gameMenuActions={leaderboard:()=>__fx.runSidebarGameMenuAction("leaderboard",368),logs:()=>__fx.runSidebarGameMenuAction("logs",418),replays:()=>__fx.runSidebarGameMenuAction("replays",444),goldTransfer:()=>__fx.runSidebarGameMenuAction("goldTransfer",483),settings:()=>__fx.runSidebarGameMenuAction("settings",450)}`
+    );
+    const { viewportWidth, viewportHeight, dimension } = matchOne(
+        /(?<viewportWidth>\w+)=(?<dimension>\w+)\(document\.documentElement\.clientWidth\)(?=,(?<viewportHeight>\w+)=\k<dimension>\(window\.visualViewport)/g
+    ).groups;
+    replaceOne(
+        new RegExp(`${viewportWidth}=${dimension}\\(document\\.documentElement\\.clientWidth\\)`, "g"),
+        `${viewportWidth}=Math.max(128,${dimension}(document.documentElement.clientWidth)-__fx.sidebar.getWidth())`
+    );
+
+    replaceOne(
+        new RegExp(`(?<canvas>\\w+)\\.style\\.width=${viewportWidth}\\+"px"[,;](?=\\k<canvas>\\.style\\.height=${viewportHeight}\\+"px")`, "g"),
+        '$<canvas>.style.left="0px",$&'
+    );
+
+    replaceOne(
+        /this\.(?<resizeMethod>\w+)=function\((?<resizeArg>\w+)\)\{by=!0,resize\(\k<resizeArg>\)\}/g,
+        "$&,__fx.sidebar.setResizeHandler(function(){resize(0)})"
+    );
+
+    const { scaleObject, scaleField } = matchOne(
+        /\w+=Math\.floor\(\.5\+\w+\*(?<scaleObject>\w+)\.(?<scaleField>\w+)\),\w+=Math\.floor\(\.5\+\w+\*\k<scaleObject>\.\k<scaleField>\)/g
+    ).groups;
+    const scaleExpression = `${scaleObject}\\.${scaleField}\\*`;
+    replaceRequired(
+        modUtils,
+        new RegExp(`${scaleExpression}(\\w+)\\.touches\\[(\\d+)\\]\\.clientX`, "g"),
+        (_match, event, touchIndex) => `${scaleObject}.${scaleField}*__fx.sidebar.toGameX(${event}.touches[${touchIndex}],${event})`,
+        "touch coordinate mapping"
+    );
+    replaceRequired(
+        modUtils,
+        new RegExp(`${scaleExpression}(\\w+)\\.clientX`, "g"),
+        (_match, event) => `${scaleObject}.${scaleField}*__fx.sidebar.toGameX(${event})`,
+        "mouse coordinate mapping"
+    );
 
     console.log('Removing ads...');
     // Remove ads
