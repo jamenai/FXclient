@@ -29,7 +29,7 @@ export default definePatch(({ replaceRawCode, matchRawCode, matchCode }) => {
         s0.dataset.fxAccountName = __fxAccountName;
         s0.dataset.fxSelf = bq.lJ.ub(qu) ? "true" : "false";
         s0.dataset.fxLobbyPlayer = "true";
-        s0.dataset.fxRank = Number.isFinite(qu.qw) && qu.qw >= 0 ? String(qu.qw + 1) : "";
+        s0.dataset.fxRank = __fx.utils.getLobbyPlayerRank(qu) ?? "";
         __fx.followedAccounts.setAccountNamesProvider(() => ${storage}.${followList}.get());
         __fx.followedAccounts.syncAccountNames(${storage}.${followList}.get());
         const __fxFollowed = __fx.followedAccounts.getLobbyDetails(__fxAccountName);

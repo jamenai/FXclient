@@ -218,6 +218,18 @@ import { createFrameScheduler } from "./frameScheduler.js";
         rank: Number(row.dataset.fxRank),
         clan: getClan(row.dataset.fxAccountName, parseClan),
       }));
+      const hasRankData = rows.some(({ rank }) => Number.isFinite(rank) && rank > 0);
+      rankSort.disabled = !hasRankData;
+      rankSort.title = hasRankData ? "" : translate("rankUnavailable");
+      rankSort.style.opacity = hasRankData ? "1" : ".55";
+      rankSort.style.cursor = hasRankData ? "pointer" : "not-allowed";
+      if (!hasRankData && rankSortDirection !== 0) {
+        rankSortDirection = 0;
+        rankSort.setAttribute("aria-pressed", "false");
+        rankSort.textContent = translate("rankBestFirst");
+        rankSort.style.backgroundColor = "rgba(0,0,0,.65)";
+        persistFilterState();
+      }
       const selfRow = rows.find(({ row }) => row.dataset.fxSelf === "true");
       const selfIsReady = selfRow?.readiness === "ready";
       const ownClan = getClan(selfRow?.row.textContent.replace(/^(?:🟢|⚪)\s*/u, ""), parseClan)
@@ -229,7 +241,7 @@ import { createFrameScheduler } from "./frameScheduler.js";
       let total = 0;
       let shown = 0;
       let readyClanmate = false;
-      const sortingActive = sortFollowedFirst || rankSortDirection !== 0;
+      const sortingActive = sortFollowedFirst || (rankSortDirection !== 0 && hasRankData);
       const orderedRows = rows.slice();
       if (sortingActive) {
         orderedRows.sort((a, b) => {

@@ -236,12 +236,24 @@ function patchCurrentMapBold(ast) {
     if (selectedNames.size !== 1) throw new Error(`Expected one selected game mode index, found ${selectedNames.size}`);
 
     if (loop.body.TYPE !== "BlockStatement") throw new Error("Current map label loop body is not a block");
+    const mapLabelElements = [];
+    walkWithoutNestedFunctions(loop.body, node => {
+        if (node.TYPE !== "Assign" || node.left?.TYPE !== "Dot" || node.left.property !== "textContent") return;
+        const element = node.left.expression;
+        const labelIndex = element?.TYPE === "Dot" ? element.expression : null;
+        if (labelIndex?.TYPE !== "Sub" || labelIndex.expression?.TYPE !== "SymbolRef"
+            || labelIndex.expression.name !== arrayName || labelIndex.property?.TYPE !== "SymbolRef"
+            || labelIndex.property.name !== indexName) return;
+        mapLabelElements.push(element);
+    });
+    if (mapLabelElements.length !== 1) {
+        throw new Error(`Expected one current map label element, found ${mapLabelElements.length}`);
+    }
+
     const selectedName = [...selectedNames][0];
     loop.body.body.push(AST.parse(
-        `if (${arrayName}[${indexName}] && ${arrayName}[${indexName}].p2 && ${arrayName}[${indexName}].p2.style) {
-            ${arrayName}[${indexName}].p2.style.setProperty("bottom", "0.25em", "important");
-            ${arrayName}[${indexName}].p2.style.setProperty("line-height", "1", "important");
-            ${arrayName}[${indexName}].p2.style.setProperty("font-weight", ${indexName} === ${selectedName} ? "700" : "normal", "important");
+        `if (${mapLabelElements[0].print_to_string()} && ${mapLabelElements[0].print_to_string()}.style) {
+            ${mapLabelElements[0].print_to_string()}.style.setProperty("font-weight", ${indexName} === ${selectedName} ? "700" : "normal", "important");
         }`
     ).body[0]);
     const selectedButton = loops[0].buttonArray.replace(/\[[^\]]+\]$/, `[${indexName}]`);
