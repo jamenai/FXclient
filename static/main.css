@@ -417,6 +417,29 @@ html[data-fx-sidebar-hidden="true"] #fx-sidebar-restore {
 	line-height: 1.4;
 }
 
+.fx-sidebar-lobby-skill {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	min-width: 0;
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+	line-height: 1.3;
+	opacity: .82;
+}
+
+.fx-sidebar-lobby-tier-icon {
+	flex: 0 0 auto;
+	font-size: 13px;
+}
+
+.fx-sidebar-lobby-tier-text {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 .fx-sidebar-clan-join {
 	display: inline-flex;
 	align-items: center;
@@ -510,6 +533,19 @@ html[data-fx-sidebar-hidden="true"] #fx-sidebar-restore {
 
 #fx-sidebar.is-collapsed .fx-sidebar-lobby-summary {
 	font-size: 10px;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-lobby-skill {
+	justify-content: center;
+	font-size: 9px;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-lobby-tier-icon {
+	font-size: 20px;
+}
+
+#fx-sidebar.is-collapsed .fx-sidebar-lobby-tier-text {
+	display: none;
 }
 
 #fx-sidebar.is-collapsed .fx-sidebar-clan-join {

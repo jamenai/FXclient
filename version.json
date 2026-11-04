@@ -1,8 +1,8 @@
 {
-    "version": "0.1.3",
+    "version": "0.1.4",
     "lastUpdated": "November 4",
     "changes": [
-        "Display Unicode country flags on the map"
+        "Show a rank-based skill estimate for ready lobby players with tier icons"
     ],
     "isSignificant": true
 }

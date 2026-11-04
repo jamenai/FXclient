@@ -2,6 +2,13 @@ const COLLAPSED_STORAGE_KEY = "fx_sidebar_collapsed";
 const EXPANDED_WIDTH = 220;
 const COLLAPSED_WIDTH = 56;
 const MOBILE_BREAKPOINT = 700;
+const LOBBY_RANK_TIERS = [
+  { maximumRank: 100, key: "sidebarRankDiamond", icon: "💎" },
+  { maximumRank: 1000, key: "sidebarRankPlatinum", icon: "🔷" },
+  { maximumRank: 10000, key: "sidebarRankGold", icon: "🥇" },
+  { maximumRank: 50000, key: "sidebarRankSilver", icon: "🥈" },
+  { maximumRank: Infinity, key: "sidebarRankBronze", icon: "🥉" },
+];
 
 function makeButton(text, title, action, className = "") {
   const button = document.createElement("button");
@@ -106,6 +113,8 @@ export function createSidebar() {
   lobbyHeading.textContent = translate("sidebarLobbyLabel");
   const lobbySummary = document.createElement("div");
   lobbySummary.className = "fx-sidebar-lobby-summary";
+  const lobbySkill = document.createElement("div");
+  lobbySkill.className = "fx-sidebar-lobby-skill";
   const clanJoin = document.createElement("button");
   clanJoin.type = "button";
   clanJoin.className = "fx-sidebar-clan-join";
@@ -115,7 +124,7 @@ export function createSidebar() {
     event.stopPropagation();
     if (clanJoin.dataset.clan) window.__fx?.sendClanJoinMessage?.(clanJoin.dataset.clan);
   });
-  lobbyCard.append(lobbyHeading, lobbySummary, clanJoin);
+  lobbyCard.append(lobbyHeading, lobbySummary, lobbySkill, clanJoin);
   const navigation = document.createElement("nav");
   navigation.className = "fx-sidebar-navigation";
 
@@ -196,6 +205,44 @@ export function createSidebar() {
     };
     const ownClan = getClan(ownName);
     const readyCount = rows.filter(row => row.dataset.fxLobbyReady === "ready").length;
+    const readyRanks = rows
+      .filter(row => row.dataset.fxLobbyReady === "ready")
+      .map(row => row.dataset.fxRank)
+      .filter(rank => rank !== "")
+      .map(Number)
+      .filter(rank => Number.isFinite(rank) && rank > 0);
+    if (readyRanks.length) {
+      const sortedRanks = readyRanks.sort((a, b) => a - b);
+      const middle = Math.floor(sortedRanks.length / 2);
+      const medianRank = Math.round(sortedRanks.length % 2
+        ? sortedRanks[middle]
+        : (sortedRanks[middle - 1] + sortedRanks[middle]) / 2);
+      const formattedRank = new Intl.NumberFormat().format(medianRank);
+      const tier = LOBBY_RANK_TIERS.find(({ maximumRank }) => medianRank <= maximumRank);
+      const tierLabel = translate(tier.key);
+      const tierIcon = document.createElement("span");
+      tierIcon.className = "fx-sidebar-lobby-tier-icon";
+      tierIcon.textContent = tier.icon;
+      tierIcon.style.fontSize = mode === "collapsed" ? "26px" : "13px";
+      tierIcon.style.lineHeight = "1";
+      tierIcon.setAttribute("aria-hidden", "true");
+      const tierText = document.createElement("span");
+      tierText.className = "fx-sidebar-lobby-tier-text";
+      tierText.textContent = translate("sidebarReadySkill")
+        .replace("{tier}", tierLabel)
+        .replace("{rank}", formattedRank);
+      tierText.hidden = mode === "collapsed";
+      lobbySkill.replaceChildren(tierIcon, tierText);
+      lobbySkill.title = translate("sidebarReadySkillTitle")
+        .replace("{count}", String(readyRanks.length))
+        .replace("{tier}", tierLabel)
+        .replace("{rank}", formattedRank);
+      lobbySkill.hidden = false;
+    } else {
+      lobbySkill.replaceChildren();
+      lobbySkill.title = "";
+      lobbySkill.hidden = true;
+    }
     const clanRows = ownClan
       ? rows.filter(row => getClan(row.dataset.fxAccountName ?? row.textContent) === ownClan)
       : [];
