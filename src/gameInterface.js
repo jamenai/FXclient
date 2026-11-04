@@ -1,11 +1,38 @@
-const playerDataProperties = ["playerTerritories", "playerBalances", "rawPlayerNames", "playerCommitted"];
-const gameObjectProperties = ["playerId", "gIsTeamGame", "gHumans", "gLobbyMaxJoin", "gameState", "gIsSingleplayer",
-    "gIsReplay", "gSelectableSpawn", "uiHidden"];
-const replayRecorderProperties = ["tickFlags", "tickCounts"];
+const playerDataProperties = [
+    "playerTerritories",
+    "playerBalances",
+    "rawPlayerNames",
+    "playerCommitted"
+];
+const gameObjectProperties = [
+    "playerId",
+    "gIsTeamGame",
+    "gHumans",
+    "gLobbyMaxJoin",
+    "gameState",
+    "gIsSingleplayer",
+    "gIsReplay",
+    "gSelectableSpawn",
+    "uiHidden"
+];
+const replayRecorderProperties = [
+    "tickFlags",
+    "tickCounts"
+];
 const arrayLikeProperties = new Set([
-    "playerTerritories", "playerBalances", "rawPlayerNames", "playerCommitted", "tickFlags", "tickCounts",
+    "playerTerritories",
+    "playerBalances",
+    "rawPlayerNames",
+    "playerCommitted",
+    "tickFlags",
+    "tickCounts",
 ]);
-const numericProperties = new Set(["playerId", "gHumans", "gLobbyMaxJoin", "gameState"]);
+const numericProperties = new Set([
+    "playerId",
+    "gHumans",
+    "gLobbyMaxJoin",
+    "gameState"
+]);
 
 function isArrayLike(value) {
     return value !== null && typeof value === "object"
