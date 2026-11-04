@@ -238,13 +238,11 @@ function patchCurrentMapBold(ast) {
     if (loop.body.TYPE !== "BlockStatement") throw new Error("Current map label loop body is not a block");
     const selectedName = [...selectedNames][0];
     loop.body.body.push(AST.parse(
-        `${arrayName}[${indexName}].p2.style.setProperty("bottom", "0.25em", "important");`
-    ).body[0]);
-    loop.body.body.push(AST.parse(
-        `${arrayName}[${indexName}].p2.style.setProperty("line-height", "1", "important");`
-    ).body[0]);
-    loop.body.body.push(AST.parse(
-        `${arrayName}[${indexName}].p2.style.setProperty("font-weight", ${indexName} === ${selectedName} ? "700" : "normal", "important");`
+        `if (${arrayName}[${indexName}] && ${arrayName}[${indexName}].p2 && ${arrayName}[${indexName}].p2.style) {
+            ${arrayName}[${indexName}].p2.style.setProperty("bottom", "0.25em", "important");
+            ${arrayName}[${indexName}].p2.style.setProperty("line-height", "1", "important");
+            ${arrayName}[${indexName}].p2.style.setProperty("font-weight", ${indexName} === ${selectedName} ? "700" : "normal", "important");
+        }`
     ).body[0]);
     const selectedButton = loops[0].buttonArray.replace(/\[[^\]]+\]$/, `[${indexName}]`);
     loop.body.body.push(AST.parse(
