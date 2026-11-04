@@ -672,8 +672,8 @@ const settingsManager = new (function () {
       const versionInfo = document.createElement("p");
       versionInfo.innerText = `FX Client v${versionData.version}`;
       const links = document.createElement("p");
-      links.innerHTML = `<a href="https://discord.gg/dyxcwdNKwK" target="_blank">Discord server</a> |
-        <a href="https://github.com/fxclient/FXclient#readme">Github repository</a>`;
+      links.innerHTML = `<a href="https://discord.gg/Hzqm6NSRp" target="_blank">Zulus FXClient Discord</a> |
+        <a href="https://github.com/jamenai/FXclient#readme">Github repository</a>`;
       const changelogButton = document.createElement("button");
       changelogButton.innerText = "Changelog";
       changelogButton.addEventListener("click", displayChangelog);

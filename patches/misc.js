@@ -25,8 +25,8 @@ export default definePatch(({ insertCode, modifyCode, replaceCode }) => {
   // Add FX Client version info to the game version window
   modifyCode(`4, 1, new g(__L(), b.c + "<br>" + d.e.f("/changelog")
     ${insert(` + "<br><br><b>" + "FX Client v" + __fx.version
-      + "<br><a href='https://discord.gg/dyxcwdNKwK' target='_blank'>FX Client Discord server</a>"
-      + "<br><a href='https://github.com/fxclient/FXclient' target='_blank'>Github repository</a></b>"`)} /*...*/)`)
+      + "<br><a href='https://discord.gg/Hzqm6NSRp' target='_blank'>Zulus FXClient Discord server</a>"
+      + "<br><a href='https://github.com/jamenai/FXclient' target='_blank'>Github repository</a></b>"`)} /*...*/)`)
   
   // Hide propaganda popup
   insertCode(`/* here */
@@ -99,7 +99,7 @@ export default definePatch(({ insertCode, modifyCode, replaceCode }) => {
   // for the custom lobby version
   try {
     modifyCode(`new a("⚔️<br>" + __L(), function() {
-      ${insert(`if (__fx.isCustomLobbyVersion) alert("This version is for use with custom lobbies only. For normal multiplayer, use the version at https://fxclient.github.io/FXclient/")
+      ${insert(`if (__fx.isCustomLobbyVersion) alert("This version is for use with custom lobbies only. For normal multiplayer, use the version at https://jamenai.github.io/FXclient/")
       else`)} b(0);
 		}, ${insert(`__fx.isCustomLobbyVersion ? "rgba(50, 50, 50, 0.6)" : `)} c.d)`)
   } catch (error) {

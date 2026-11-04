@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://fxclient.github.io/FXclient/">
+  <a href="https://jamenai.github.io/FXclient/">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="/assets/logo_text_dark.png">
       <source media="(prefers-color-scheme: light)" srcset="/assets/logo_text_light.png">
@@ -8,17 +8,24 @@
   </a>
 </p>
 <p align="center">
-  <a href="https://discord.gg/JEwYWGraj7"><img alt="FX Client Discord" src="https://img.shields.io/discord/1055801912286515220?logo=discord&logoColor=white&label=FX%20Client&color=5865F2"></a>
-  <a href="https://github.com/fxclient/FXclient/actions/workflows/deploy_github_pages.yml"><img src="https://github.com/fxclient/FXclient/actions/workflows/deploy_github_pages.yml/badge.svg" alt="Build and Publish to GitHub Pages"></a>
-  <a href="https://fxclient.github.io/FXclient/"><img src="https://github.com/fxclient/FXclient/actions/workflows/pages/pages-build-deployment/badge.svg" alt="pages-build-deployment"></a>
+  <a href="https://discord.gg/Hzqm6NSRp"><img alt="Zulus FXClient Discord" src="https://img.shields.io/badge/Discord-Zulus%20FXClient-5865F2?logo=discord&logoColor=white"></a>
+  <a href="https://github.com/jamenai/FXclient/actions/workflows/deploy_github_pages.yml"><img src="https://github.com/jamenai/FXclient/actions/workflows/deploy_github_pages.yml/badge.svg" alt="Build and Publish to GitHub Pages"></a>
+  <a href="https://jamenai.github.io/FXclient/"><img src="https://github.com/jamenai/FXclient/actions/workflows/pages/pages-build-deployment/badge.svg" alt="pages-build-deployment"></a>
 </p>
 
-## What is FX Client?
-FX Client is the first Territorial.io client, offering a better User Interface and better User Experience. It's basically Territorial.io but better.
+## Zulus FXClient
+Zulus FXClient is an independently maintained fork of the original FX Client for Territorial.io. It keeps the core FX Client features and adds its own lobby, player-list, and in-game improvements.
 
-**You can use the latest version of the client here: https://fxclient.github.io/FXclient/**
+**Use the latest Zulus FXClient here: https://jamenai.github.io/FXclient/**
 
-## Features:
+### Zulus-specific features
+1. A compact lobby layout with filters for readiness, followed players, and clan members
+2. Player-list sorting by rank or followed status
+3. Highlights for duplicate IP addresses and players from your clan
+4. An estimated troop count for eliminating a territory, alongside density information
+5. Settings to customize these lobby and in-game enhancements
+
+### Core FX Client features
 1. It's free and open source on Github
 2. It's ad-free and removes the game's default ads
 3. It makes game look cooler, by replacing default assets with new ones
@@ -33,7 +40,7 @@ FX Client is the first Territorial.io client, offering a better User Interface a
 12. Makes replays more useful by auto-saving recent games and adding a seek bar for rewinding/fast-forwarding replays
 13. Can be installed as a PWA (progressive web app) and works offline both as an installed app and in the browser
 
-#### The client has a settings menu, from which you can:
+#### Zulus FXClient also includes a settings menu to:
 
 14. Make fullscreen mode trigger automatically
 15. Set a custom main menu background
@@ -73,6 +80,6 @@ The preview port can be changed on Windows PowerShell with:
 $env:FXCLIENT_PORT=8080; npm run serve
 ```
 
-## Contact Us
+## Community
 
-Join the FX Client Discord server: https://discord.gg/JEwYWGraj7
+For community discussion, join the Zulus FXClient Discord: https://discord.gg/Hzqm6NSRp

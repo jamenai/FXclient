@@ -15,14 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fxclient/FXclient.git"
+    "url": "git+https://github.com/jamenai/FXclient.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/fxclient/FXclient/issues"
+    "url": "https://github.com/jamenai/FXclient/issues"
   },
-  "homepage": "https://github.com/fxclient/FXclient#readme",
+  "homepage": "https://github.com/jamenai/FXclient#readme",
   "dependencies": {
     "core-js": "^3.44.0",
     "js-beautify": "^1.14.11",
