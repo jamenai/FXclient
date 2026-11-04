@@ -250,33 +250,6 @@ function patchCurrentMapBold(ast) {
     ).body[0]);
 }
 
-function patchCurrentMapSummaryBold(ast) {
-    const matches = [];
-    ast.walk(new AST.TreeWalker(node => {
-        if (node.TYPE !== "Function") return;
-        let referencesMapSeed = false;
-        const summaries = [];
-        walkWithoutNestedFunctions(node, child => {
-            if (child.TYPE === "Dot" && child.property === "mapSeed") referencesMapSeed = true;
-            if (child.TYPE !== "Assign" || child.left?.TYPE !== "Dot" || child.left.property !== "textContent") return;
-            const button = child.left.expression;
-            if (button?.TYPE !== "Dot" || button.property !== "button" || button.expression?.TYPE !== "Sub"
-                || button.expression.property?.TYPE !== "Number" || button.expression.property.value !== 0) return;
-            summaries.push(button.print_to_string());
-        });
-        if (referencesMapSeed && summaries.length === 1) {
-            matches.push({ node, buttonExpression: summaries[0] });
-        }
-    }));
-    if (matches.length !== 1) throw new Error(`Expected one current map summary update, found ${matches.length}`);
-
-    const { node, buttonExpression } = matches[0];
-    if (!Array.isArray(node.body)) throw new Error("Current map summary function body is not a statement list");
-    node.body.unshift(AST.parse(
-        `${buttonExpression}.style.setProperty("font-weight", "700", "important");`
-    ).body[0]);
-}
-
 /** Apply independently guarded lobby AST transforms; identifiers can change between minified builds. */
 export function patchLobbyLayout(script) {
     const ast = AST.parse(script);
@@ -293,7 +266,5 @@ export function patchLobbyLayout(script) {
     apply("lobby-summary-text-ast", patchSummaryText);
     apply("chat-message-spacing-ast", patchChatSpacing);
     apply("current-map-bold-ast", patchCurrentMapBold);
-    apply("current-map-summary-bold-ast", patchCurrentMapSummaryBold);
-
     return { script: ast.print_to_string(), results };
 }
