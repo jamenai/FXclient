@@ -18,6 +18,7 @@ import quickEmojis from "./quickEmojis.js";
 import replayHistory from "./replayHistory.js";
 import replayTimebar from "./replayTimebar.js";
 import savedAccounts from "./savedAccounts.js";
+import titanChatButton from "./titanChatButton.js";
 
 // Preserve the current application order explicitly. Patch dependencies and
 // post-minification callbacks should not depend on filesystem enumeration.
@@ -41,6 +42,7 @@ export const patchRegistry = [
     ["replayHistory.js", replayHistory],
     ["replayTimebar.js", replayTimebar],
     ["savedAccounts.js", savedAccounts],
+    ["titanChatButton.js", titanChatButton],
 ];
 
 /** @param {ModUtils} modUtils @param {[string, (modUtils: ModUtils) => unknown][]} registry */

@@ -275,7 +275,19 @@ export function initializeLobbyEnhancements() {
         if (dashboardEnabled && ownClan) {
         const title = document.createElement("strong");
         title.textContent = `[${ownClan}]`;
-        clanDashboard.append(title);
+        const joinAction = document.createElement("button");
+        joinAction.type = "button";
+        joinAction.className = "fx-clan-join-action";
+        joinAction.setAttribute("aria-label", `[${ownClan}] join`);
+        joinAction.title = `@[${ownClan}] join`;
+        joinAction.innerHTML = '<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 10v4h3l11 5V5L6 10H3zm4 4.1 2.2 5.4h3.2L11 15.1 7 14.1zM19 9.2a4 4 0 0 1 0 5.6l1.4 1.4a6 6 0 0 0 0-8.4L19 9.2z"/></svg><span>join</span>';
+        joinAction.style.cssText = "display:inline-flex;align-items:center;justify-content:center;gap:.25em;padding:0 .45em;border:1px solid rgba(120,210,155,.4);border-radius:4px;background:rgba(25,95,65,.55);color:inherit;font:inherit;font-size:.95em;line-height:1.35;cursor:pointer;white-space:nowrap";
+        joinAction.addEventListener("click", event => {
+          event.preventDefault();
+          event.stopPropagation();
+          const sendClanJoinMessage = window.__fx?.sendClanJoinMessage;
+          if (typeof sendClanJoinMessage === "function") sendClanJoinMessage(ownClan);
+        });
         const createClanFilterAction = (label, readiness) => {
           const action = document.createElement("button");
           action.type = "button";
@@ -302,7 +314,7 @@ export function initializeLobbyEnhancements() {
           .replace("{ready}", String(clanReadyCount))
           .replace("{total}", String(clanRows.length)), "ready");
         summary.setAttribute("aria-label", translate("clanReadyFilterAction"));
-        clanDashboard.append(title, summary);
+        clanDashboard.append(title, joinAction, summary);
         if (clanWaitingCount > 0) {
           const waiting = createClanFilterAction(translate("clanWaitingSummary").replace("{count}", String(clanWaitingCount)), "not-ready");
           waiting.setAttribute("aria-label", translate("clanWaitingFilterAction"));
