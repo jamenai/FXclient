@@ -229,7 +229,7 @@ function patchCurrentMapBold(ast) {
     const selectedNames = new Set();
     walkWithoutNestedFunctions(functions[0], node => {
         if (node.TYPE === "VarDef" && node.value?.TYPE === "Sub" && node.value.property?.TYPE === "Number"
-            && node.value.property.value === 0 && node.value.expression?.TYPE === "Dot" && node.value.expression.property === "ow") {
+            && node.value.property.value === 0 && node.value.expression?.TYPE === "Dot") {
             selectedNames.add(node.name.name);
         }
     });
@@ -258,20 +258,16 @@ function patchCurrentMapSummaryBold(ast) {
         if (node.TYPE !== "Function") return;
         let referencesMapSeed = false;
         const summaries = [];
-        const buttonArrays = [];
         walkWithoutNestedFunctions(node, child => {
             if (child.TYPE === "Dot" && child.property === "mapSeed") referencesMapSeed = true;
-            if (child.TYPE === "Dot" && child.property === "aFC" && child.expression?.TYPE === "SymbolRef") {
-                buttonArrays.push(child.print_to_string());
-            }
             if (child.TYPE !== "Assign" || child.left?.TYPE !== "Dot" || child.left.property !== "textContent") return;
             const button = child.left.expression;
             if (button?.TYPE !== "Dot" || button.property !== "button" || button.expression?.TYPE !== "Sub"
                 || button.expression.property?.TYPE !== "Number" || button.expression.property.value !== 0) return;
-            summaries.push(button.print_to_string());
+            if (button.expression.expression?.TYPE === "SymbolRef") summaries.push(button.expression.expression.name);
         });
-        if (referencesMapSeed && summaries.length === 1 && buttonArrays.length === 1) {
-            matches.push({ node, buttonArray: buttonArrays[0] });
+        if (referencesMapSeed && summaries.length === 1) {
+            matches.push({ node, buttonArray: summaries[0] });
         }
     }));
     if (matches.length !== 1) throw new Error(`Expected one current map summary update, found ${matches.length}`);
