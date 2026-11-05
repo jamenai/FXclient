@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="ribbon" x1="21" y1="39" x2="43" y2="62" gradientUnits="userSpaceOnUse"><stop stop-color="#e5faff"/><stop offset="1" stop-color="#367d99"/></linearGradient>
+    <linearGradient id="rim" x1="12" y1="7" x2="53" y2="51" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset=".48" stop-color="#9ce7f0"/><stop offset="1" stop-color="#397c9c"/></linearGradient>
+    <linearGradient id="face" x1="18" y1="10" x2="47" y2="47" gradientUnits="userSpaceOnUse"><stop stop-color="#c4f4f4"/><stop offset="1" stop-color="#397f9b"/></linearGradient>
+    <filter id="shadow" x="2" y="2" width="60" height="62" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="1.6"/><feOffset dy="1.5"/><feComponentTransfer><feFuncA type="linear" slope=".38"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <g filter="url(#shadow)"><path d="m20 37 12 7 12-7 3 22-15-8-15 8 3-22Z" fill="url(#ribbon)" stroke="#d9fbff" stroke-width="1.2"/><circle cx="32" cy="27" r="21" fill="#173e50" stroke="url(#rim)" stroke-width="3"/><circle cx="32" cy="27" r="16.8" fill="url(#face)" stroke="#e3fbff" stroke-opacity=".8"/><path d="m32 13 4.1 8.5 9.4 1.4-6.8 6.5 1.6 9.3-8.3-4.4-8.3 4.4 1.6-9.3-6.8-6.5 9.4-1.4L32 13Z" fill="#f4ffff" stroke="#367d99" stroke-width="1.2"/><path d="m32 20 2.2 5 5.4.6-4 3.7 1 5.3-4.6-2.6-4.6 2.6 1-5.3-4-3.7 5.4-.6 2.2-5Z" fill="#71d8e8"/><path d="M20 17c3-4 7-6 12-6" stroke="#fff" stroke-opacity=".9" stroke-width="1.5" stroke-linecap="round"/></g>
+</svg>

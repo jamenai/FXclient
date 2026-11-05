@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="ribbon" x1="21" y1="39" x2="43" y2="62" gradientUnits="userSpaceOnUse"><stop stop-color="#e6c6ff"/><stop offset="1" stop-color="#692ba7"/></linearGradient>
+    <linearGradient id="rim" x1="12" y1="7" x2="53" y2="51" gradientUnits="userSpaceOnUse"><stop stop-color="#f7e8ff"/><stop offset=".42" stop-color="#b96cff"/><stop offset="1" stop-color="#3d1a70"/></linearGradient>
+    <linearGradient id="face" x1="18" y1="10" x2="47" y2="47" gradientUnits="userSpaceOnUse"><stop stop-color="#49316d"/><stop offset=".48" stop-color="#17172d"/><stop offset="1" stop-color="#090b18"/></linearGradient>
+    <linearGradient id="crystal" x1="25" y1="15" x2="40" y2="39" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset=".3" stop-color="#d1a2ff"/><stop offset="1" stop-color="#6c38c7"/></linearGradient>
+    <filter id="shadow" x="2" y="2" width="60" height="62" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="1.8"/><feOffset dy="1.5"/><feComponentTransfer><feFuncA type="linear" slope=".48"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <g filter="url(#shadow)"><path d="m20 37 12 7 12-7 3 22-15-8-15 8 3-22Z" fill="url(#ribbon)" stroke="#d6adff" stroke-width="1.2"/><circle cx="32" cy="27" r="21" fill="#100d1c" stroke="url(#rim)" stroke-width="3"/><circle cx="32" cy="27" r="16.8" fill="url(#face)" stroke="#d7a4ff" stroke-opacity=".9"/><path d="m32 13 9 8-2 13-7 6-7-6-2-13 9-8Z" fill="url(#crystal)" stroke="#f7eaff" stroke-width="1.2"/><path d="m32 13 1.5 13-1.5 14-7-6-2-13 9-8ZM32 13l9 8-8 5-.9-13Z" fill="#fff" fill-opacity=".28"/><path d="m24 21 9 5 8-5M25 34l8-8 6 8" stroke="#512995" stroke-opacity=".8" stroke-width="1.2"/><path d="M20 17c3-4 7-6 12-6" stroke="#fff" stroke-opacity=".95" stroke-width="1.5" stroke-linecap="round"/><path d="m48 13 1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2Z" fill="#e8c9ff"/></g>
+</svg>

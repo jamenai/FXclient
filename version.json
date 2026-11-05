@@ -1,8 +1,10 @@
 {
-    "version": "0.1.4",
-    "lastUpdated": "November 4",
+    "version": "0.1.5",
+    "lastUpdated": "November 5",
     "changes": [
-        "Show a rank-based skill estimate for ready lobby players with tier icons"
+        "Add a weighted 1-10 rating for ready lobby players with Top-500 bonuses and Top-10/100 medal floors",
+        "Add custom SVG rank badges from Bronze through Obsidian and emphasize the rating in the sidebar",
+        "Keep the lobby rating during matches, separate the clan join action, and show actual human and clan player counts"
     ],
     "isSignificant": true
 }
