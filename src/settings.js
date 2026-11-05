@@ -480,7 +480,7 @@ const settingsManager = new (function () {
       label: __fx.translateFX("lobbyFontScale"),
       note: __fx.translateFX("lobbyFontScaleNote"),
       min: 75,
-      max: 125,
+      max: 300,
       step: 5,
     },
     {
@@ -672,7 +672,7 @@ const settingsManager = new (function () {
   this.applySettings = function () {
     document.documentElement.style.setProperty(
       "--fx-lobby-font-scale",
-      String(Math.max(0.75, Math.min(1.25, Number(settings.lobbyFontScale ?? 100) / 100)))
+      String(Math.max(0.75, Math.min(3, Number(settings.lobbyFontScale ?? 100) / 100)))
     );
     if (settings.customBackgroundUrl !== "") {
       document.body.style.backgroundImage =

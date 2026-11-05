@@ -8,8 +8,8 @@ export function initializeLobbyEnhancements() {
   const searchClass = "fx-lobby-roster-search";
   if (window.__fx?.settings?.enhancedLobbyLayout === false) return () => {};
   const translate = key => window.__fx?.translateFX?.(key) ?? key;
-  const fontScale = () => Math.max(0.75, Math.min(1.25, Number(window.__fx?.settings?.lobbyFontScale ?? 100) / 100));
-  const filterFontSize = () => `clamp(11px, ${0.4 * fontScale()}em, 14px)`;
+  const fontScale = () => Math.max(0.75, Math.min(3, Number(window.__fx?.settings?.lobbyFontScale ?? 100) / 100));
+  const filterFontSize = () => `clamp(11px, ${0.4 * fontScale()}em, 42px)`;
   const normalizeClan = clan => typeof clan === "string" ? clan.trim().toLocaleUpperCase() : null;
   const getClan = (name, parser) => {
     if (typeof name !== "string") return null;
@@ -42,29 +42,279 @@ export function initializeLobbyEnhancements() {
       if (!paths) continue;
       const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       icon.setAttribute("viewBox", "0 0 24 24");
-      icon.setAttribute("width", "23");
-      icon.setAttribute("height", "23");
+      icon.setAttribute("width", "18");
+      icon.setAttribute("height", "18");
       icon.setAttribute("fill", "none");
       icon.setAttribute("stroke", "currentColor");
       icon.setAttribute("stroke-width", "1.65");
       icon.setAttribute("stroke-linecap", "round");
       icon.setAttribute("stroke-linejoin", "round");
       icon.setAttribute("aria-hidden", "true");
-      icon.style.setProperty("width", "23px", "important");
-      icon.style.setProperty("height", "23px", "important");
-      icon.style.setProperty("min-width", "23px", "important");
-      icon.style.setProperty("min-height", "23px", "important");
-      icon.style.setProperty("flex", "0 0 23px", "important");
+      icon.style.setProperty("width", "clamp(14px, 1.1em, 22px)", "important");
+      icon.style.setProperty("height", "clamp(14px, 1.1em, 22px)", "important");
+      icon.style.setProperty("min-width", "14px", "important");
+      icon.style.setProperty("min-height", "14px", "important");
+      icon.style.setProperty("max-width", "22px", "important");
+      icon.style.setProperty("max-height", "22px", "important");
+      icon.style.setProperty("flex", "0 0 clamp(14px, 1.1em, 22px)", "important");
       icon.innerHTML = paths;
       const wrapper = document.createElement("span");
       wrapper.dataset.fxLobbyTabIcon = "true";
-      wrapper.style.cssText = "display:inline-flex;align-items:center;gap:.35em;vertical-align:middle";
+      wrapper.style.cssText = "display:inline-flex;align-items:center;gap:.25em;vertical-align:middle;line-height:1";
       textNode.parentNode.insertBefore(wrapper, textNode);
       if (match[1]) textNode.parentNode.insertBefore(document.createTextNode(match[1]), wrapper);
       wrapper.append(icon, document.createTextNode(match[2]));
       const trailingText = textNode.textContent.slice(match[0].length);
       if (trailingText) textNode.parentNode.insertBefore(document.createTextNode(trailingText), textNode);
       textNode.remove();
+    }
+
+    for (const wrapper of root.querySelectorAll("[data-fx-lobby-tab-icon='true']")) {
+      const tab = wrapper.closest("button, [role='button']");
+      if (!tab) continue;
+      const isPlayerTab = /^(?:spieler|players)\b/i.test(wrapper.textContent.trim());
+      const clanCounterPattern = /^[A-Z0-9_-]{1,12}:\s*\d+$/;
+      const setImportant = (element, property, value) => {
+        if (element.style.getPropertyValue(property) !== value
+          || element.style.getPropertyPriority(property) !== "important") {
+          element.style.setProperty(property, value, "important");
+        }
+      };
+      tab.style.setProperty("box-sizing", "border-box", "important");
+      tab.style.setProperty("height", "auto", "important");
+      tab.style.setProperty("min-height", "0", "important");
+      tab.style.setProperty("padding", "0 .35em", "important");
+      tab.style.setProperty("line-height", "1.05", "important");
+      tab.style.setProperty("font-size", `clamp(11px, ${0.42 * fontScale()}em, 36px)`, "important");
+      tab.style.setProperty("display", "flex", "important");
+      tab.style.setProperty("align-items", "center", "important");
+      tab.style.setProperty("justify-content", "center", "important");
+      setImportant(wrapper, "justify-content", "center");
+      if (tab.parentElement) {
+        setImportant(tab.parentElement, "display", "flex");
+        setImportant(tab.parentElement, "align-items", "stretch");
+        setImportant(tab.parentElement, "width", "100%");
+        setImportant(tab.parentElement, "flex", "1 1 auto");
+        setImportant(tab.parentElement, "align-self", "stretch");
+        setImportant(tab.parentElement, "height", "100%");
+        setImportant(tab.parentElement, "max-height", "none");
+        setImportant(tab.parentElement, "min-width", "0");
+        setImportant(tab, "flex", "1 1 50%");
+        setImportant(tab, "align-self", "stretch");
+        setImportant(tab, "height", "100%");
+        setImportant(tab, "min-height", "100%");
+        setImportant(tab, "min-width", "0");
+      }
+
+      if (isPlayerTab) {
+        const clanCounters = Array.from(tab.querySelectorAll("span"))
+          .filter(span => !wrapper.contains(span) && clanCounterPattern.test(span.textContent.trim()));
+        if (clanCounters.length) {
+          tab.classList.add("fx-lobby-chat-player-tab");
+          if (wrapper.parentElement !== tab) tab.appendChild(wrapper);
+          setImportant(tab, "display", "flex");
+          setImportant(tab, "flex-direction", "column");
+          setImportant(tab, "flex-wrap", "nowrap");
+          setImportant(tab, "align-content", "center");
+          setImportant(tab, "align-items", "stretch");
+          setImportant(tab, "justify-content", "center");
+          setImportant(tab, "row-gap", ".1em");
+          setImportant(tab, "flex", "1 1 50%");
+          setImportant(tab, "align-self", "stretch");
+          setImportant(tab, "width", "50%");
+          setImportant(wrapper, "position", "static");
+          setImportant(wrapper, "display", "inline-flex");
+          setImportant(wrapper, "justify-content", "center");
+          setImportant(wrapper, "align-self", "center");
+          setImportant(wrapper, "flex", "0 0 auto");
+          setImportant(wrapper, "width", "100%");
+          setImportant(wrapper, "min-width", "0");
+          setImportant(wrapper, "box-sizing", "border-box");
+
+          let counterRow = tab.querySelector(":scope > .fx-lobby-clan-counts");
+          if (!counterRow) {
+            counterRow = document.createElement("div");
+            counterRow.className = "fx-lobby-clan-counts";
+            tab.appendChild(counterRow);
+          }
+          setImportant(counterRow, "display", "flex");
+          setImportant(counterRow, "flex-wrap", "wrap");
+          setImportant(counterRow, "align-items", "center");
+          setImportant(counterRow, "justify-content", "center");
+          setImportant(counterRow, "gap", ".1em .5em");
+          setImportant(counterRow, "position", "static");
+          setImportant(counterRow, "flex", "0 0 auto");
+          setImportant(counterRow, "width", "100%");
+          setImportant(counterRow, "min-width", "0");
+          setImportant(counterRow, "max-width", "100%");
+          setImportant(counterRow, "box-sizing", "border-box");
+          for (const counter of clanCounters) {
+            for (const property of ["position", "top", "right", "bottom", "left"]) {
+              setImportant(counter, property, property === "position" ? "static" : "auto");
+            }
+            setImportant(counter, "display", "inline-flex");
+            setImportant(counter, "flex", "0 0 auto");
+            setImportant(counter, "white-space", "nowrap");
+            setImportant(counter, "line-height", "1");
+            setImportant(counter, "margin", "0");
+            if (counter.parentElement !== counterRow) counterRow.appendChild(counter);
+          }
+        }
+      }
+    }
+  }
+
+  function layoutLobbyModeTabs(root) {
+    const styleId = "fx-lobby-mode-tab-grid-style";
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = `
+        .fx-lobby-mode-tabs-wrapper{display:flex!important;align-items:stretch!important;width:100%!important;height:auto!important;max-height:none!important;white-space:normal!important}
+        .fx-lobby-mode-tab{display:inline-grid!important;flex:0 1 auto;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,.64em) minmax(0,1fr) minmax(0,.68em);grid-template-areas:"clock count" "title title" "map map";align-items:center;box-sizing:border-box;height:auto!important;min-height:2.42em!important;padding:0 .2em!important;overflow:hidden}
+        .fx-lobby-mode-tab-title{grid-area:title;justify-self:center;align-self:center;box-sizing:border-box;max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.1;font-weight:600}
+        .fx-lobby-mode-tab [data-fx-tab-meta="clock"]{grid-area:clock;justify-self:start;align-self:start}
+        .fx-lobby-mode-tab [data-fx-tab-meta="count"]{grid-area:count;justify-self:end;align-self:start}
+        .fx-lobby-mode-tab [data-fx-tab-meta="map"]{grid-area:map;justify-self:start;align-self:end}
+      `;
+      document.head.appendChild(style);
+    }
+
+    for (const button of root.querySelectorAll("button")) {
+      const spans = Array.from(button.children).filter(child => child instanceof HTMLSpanElement);
+      const hasClock = spans.some(span => span.dataset.fxTabMeta === "clock"
+        || (span.style.position === "absolute" && span.style.top && span.style.left));
+      const hasCount = spans.some(span => span.dataset.fxTabMeta === "count"
+        || (span.style.position === "absolute" && span.style.top && span.style.right));
+      if (!hasClock || !hasCount) continue;
+
+      button.classList.add("fx-lobby-mode-tab");
+      const setImportantStyle = (element, property, value) => {
+        if (element.style.getPropertyValue(property) !== value
+          || element.style.getPropertyPriority(property) !== "important") {
+          element.style.setProperty(property, value, "important");
+        }
+      };
+      const tabsWrapper = button.parentElement;
+      if (tabsWrapper) {
+        tabsWrapper.classList.add("fx-lobby-mode-tabs-wrapper");
+        setImportantStyle(tabsWrapper, "display", "flex");
+        setImportantStyle(tabsWrapper, "align-items", "stretch");
+        setImportantStyle(tabsWrapper, "width", "100%");
+        setImportantStyle(tabsWrapper, "height", "auto");
+        setImportantStyle(tabsWrapper, "max-height", "none");
+        setImportantStyle(tabsWrapper, "white-space", "normal");
+        const tabsRow = tabsWrapper.parentElement;
+        if (tabsRow) setImportantStyle(tabsRow, "height", "auto");
+      }
+      setImportantStyle(button, "height", "auto");
+      const tabFontSize = `${Math.round(16 * fontScale())}px`;
+      if (button.style.getPropertyValue("font-size") !== tabFontSize
+        || button.style.getPropertyPriority("font-size") !== "important") {
+        button.style.setProperty("font-size", tabFontSize, "important");
+      }
+      const titleText = Array.from(button.childNodes)
+        .filter(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+      let title = button.querySelector(":scope > .fx-lobby-mode-tab-title");
+      if (!title && titleText.length) {
+        title = document.createElement("span");
+        title.className = "fx-lobby-mode-tab-title";
+        title.textContent = titleText.map(node => node.textContent.trim()).join(" ");
+        titleText.forEach(node => node.remove());
+        button.appendChild(title);
+      } else if (title && titleText.length) {
+        title.textContent = titleText.map(node => node.textContent.trim()).join(" ");
+        titleText.forEach(node => node.remove());
+      }
+
+      for (const span of spans) {
+        if (!span.dataset.fxTabMeta) {
+          if (span.style.position !== "absolute") continue;
+          const area = span.style.bottom ? "map" : span.style.left ? "clock" : "count";
+          span.dataset.fxTabMeta = area;
+          for (const property of ["position", "top", "right", "bottom", "left"]) {
+            span.style.setProperty(property, property === "position" ? "static" : "auto", "important");
+          }
+        }
+        // Refresh on every pass so tabs created before/after a scale change stay consistent.
+        span.style.setProperty("font-size", `${Math.round(10 * fontScale())}px`, "important");
+        span.style.setProperty("line-height", "1", "important");
+        span.style.setProperty("white-space", "nowrap", "important");
+        span.style.setProperty("max-width", "100%", "important");
+        span.style.setProperty("overflow", "hidden", "important");
+        span.style.setProperty("text-overflow", "ellipsis", "important");
+        span.style.setProperty("pointer-events", "none", "important");
+      }
+    }
+  }
+
+  function syncLobbyProgressHeight(root) {
+    const progress = root.children[5];
+    if (!progress) return;
+    const walker = document.createTreeWalker(progress, NodeFilter.SHOW_TEXT);
+    let label = null;
+    while (walker.nextNode()) {
+      if (/\d+(?:[.,]\d+)?\s*%/.test(walker.currentNode.textContent)) {
+        label = walker.currentNode.parentElement;
+        break;
+      }
+    }
+    if (!label) return;
+    const style = getComputedStyle(label);
+    const fontSize = Number.parseFloat(style.fontSize);
+    const lineHeight = Number.parseFloat(style.lineHeight);
+    if (!Number.isFinite(fontSize)) return;
+    const height = Math.ceil((Number.isFinite(lineHeight) ? lineHeight : fontSize * 1.2) + 2);
+    progress.style.setProperty("height", `${height}px`, "important");
+    progress.style.setProperty("min-height", `${height}px`, "important");
+    progress.style.setProperty("max-height", `${height}px`, "important");
+    progress.style.removeProperty("overflow");
+    const tracks = getComputedStyle(root).gridTemplateRows.match(/(?:minmax\([^)]*\)|\d+(?:\.\d+)?px)/g);
+    if (tracks?.length === 7) {
+      tracks[5] = `${height}px`;
+      root.style.setProperty("grid-template-rows", tracks.join(" "), "important");
+    }
+  }
+
+  function spaceLobbyMapButtons(root) {
+    const mapButtons = [
+      ...root.children[2].querySelectorAll("button"),
+      ...root.children[3].querySelectorAll("button"),
+    ].filter(button => !button.querySelector("[data-fx-lobby-tab-icon='true']")
+      && !button.classList.contains("fx-lobby-mode-tab"));
+    const groups = new Map();
+    for (const button of mapButtons) {
+      const parent = button.parentElement;
+      if (!parent) continue;
+      if (!groups.has(parent)) groups.set(parent, []);
+      groups.get(parent).push(button);
+    }
+    for (const [parent, buttons] of groups) {
+      if (buttons.length !== 2) continue;
+      const gap = "1.5em";
+      parent.style.setProperty("display", "grid", "important");
+      parent.style.setProperty("grid-template-columns", "repeat(2, minmax(0, 1fr))", "important");
+      parent.style.setProperty("grid-auto-flow", "column", "important");
+      parent.style.setProperty("column-gap", gap, "important");
+      parent.style.setProperty("box-sizing", "border-box", "important");
+      parent.style.setProperty("width", "100%", "important");
+      parent.style.setProperty("max-width", "100%", "important");
+      parent.style.setProperty("min-width", "0", "important");
+      parent.style.setProperty("justify-self", "stretch", "important");
+      parent.style.setProperty("align-self", "stretch", "important");
+      for (const button of buttons) {
+        button.style.setProperty("box-sizing", "border-box", "important");
+        button.style.setProperty("display", "flex", "important");
+        button.style.setProperty("align-items", "center", "important");
+        button.style.setProperty("justify-content", "center", "important");
+        button.style.setProperty("text-align", "center", "important");
+        button.style.setProperty("width", "100%", "important");
+        button.style.setProperty("height", "100%", "important");
+        button.style.setProperty("align-self", "stretch", "important");
+        button.style.setProperty("min-width", "0", "important");
+        button.style.setProperty("flex", "none", "important");
+      }
+      buttons[0].style.setProperty("font-weight", "700", "important");
     }
   }
 
@@ -109,7 +359,10 @@ export function initializeLobbyEnhancements() {
     list.dataset.fxLobbyEnhanced = "true";
     list.style.display = "grid";
     list.style.gridTemplateColumns = "repeat(auto-fit, minmax(max(10em, calc((100% - 1em) / 6)), 1fr))";
-    list.style.alignItems = "center";
+    list.style.gridAutoFlow = "row";
+    list.style.gridAutoRows = "max-content";
+    list.style.alignItems = "start";
+    list.style.alignContent = "start";
     list.style.gap = "0.02em 0.2em";
     list.style.margin = "0.2em 0.35em";
 
@@ -178,7 +431,7 @@ export function initializeLobbyEnhancements() {
     clanDashboard.className = "fx-clan-lobby-dashboard";
     clanDashboard.setAttribute("aria-label", translate("clanLobbyDashboard"));
     clanDashboard.setAttribute("aria-live", "polite");
-    clanDashboard.style.cssText = "box-sizing:border-box;display:none;flex:1 1 100%;align-items:center;gap:.15em .5em;flex-wrap:wrap;min-width:0;margin:0 .25em;padding:.1em .15em;border:0;background:transparent;font-size:clamp(10px,.4em,12px);line-height:1.2;opacity:.9";
+    clanDashboard.style.cssText = "box-sizing:border-box;display:none;flex:1 1 100%;align-items:center;gap:.15em .5em;flex-wrap:wrap;min-width:0;margin:0 .25em;padding:.1em .15em;border:0;background:transparent;font-size:clamp(12px,.58em,36px);line-height:1.2;opacity:.9";
     const filterStorageKey = "fxclient:lobby-filters:v1";
     let sortFollowedFirst = false;
     let rankSortDirection = 0;
@@ -256,6 +509,10 @@ export function initializeLobbyEnhancements() {
       const clanWaitingCount = clanRows.filter(({ readiness }) => readiness === "not-ready").length;
       const clanUnknownCount = clanRows.length - clanReadyCount - clanWaitingCount;
       const dashboardEnabled = window.__fx?.settings?.showClanLobbyDashboard !== false;
+      const dashboardFontSize = `clamp(12px, ${0.58 * fontScale()}em, 36px)`;
+      if (clanDashboard.style.fontSize !== dashboardFontSize) {
+        clanDashboard.style.fontSize = dashboardFontSize;
+      }
       clanDashboard.style.display = dashboardEnabled && ownClan ? "flex" : "none";
       const dashboardState = JSON.stringify([
         dashboardEnabled,
@@ -364,6 +621,19 @@ export function initializeLobbyEnhancements() {
       const orderByRow = new Map(orderedRows.map(({ row }, index) => [row, String(index)]));
       for (const { row, isFollowed, readiness, clan } of rows) {
         total++;
+        row.style.setProperty("position", "static", "important");
+        for (const property of ["top", "right", "bottom", "left"]) {
+          row.style.setProperty(property, "auto", "important");
+        }
+        row.style.setProperty("box-sizing", "border-box", "important");
+        row.style.setProperty("width", "auto", "important");
+        row.style.setProperty("min-width", "0", "important");
+        row.style.setProperty("max-width", "100%", "important");
+        row.style.setProperty("height", "auto", "important");
+        row.style.setProperty("min-height", "1.2em", "important");
+        row.style.setProperty("display", "flex", "important");
+        row.style.setProperty("align-items", "center", "important");
+        row.style.setProperty("line-height", "1.2", "important");
         const text = row.textContent.trim();
         const matchesReadiness = readyFilter.value === "all"
           || (readyFilter.value === "ready" && readiness === "ready")
@@ -380,8 +650,9 @@ export function initializeLobbyEnhancements() {
         if (visible) shown++;
         const desiredOrder = sortingActive ? orderByRow.get(row) : "";
         if (row.style.order !== desiredOrder) row.style.order = desiredOrder;
-        if (row.style.fontSize !== ".58em") row.style.fontSize = ".58em";
-        const desiredDisplay = visible ? "inline-block" : "none";
+        const rosterFontSize = `${0.58 * fontScale()}em`;
+        if (row.style.fontSize !== rosterFontSize) row.style.fontSize = rosterFontSize;
+        const desiredDisplay = visible ? "flex" : "none";
         if (row.style.getPropertyValue("display") !== desiredDisplay
           || row.style.getPropertyPriority("display") !== "important") {
           row.style.setProperty("display", desiredDisplay, "important");
@@ -399,6 +670,10 @@ export function initializeLobbyEnhancements() {
         if (button.dataset.fxReadyButton !== "true"
           && !buttonLabel.startsWith(readyLabel)) continue;
         button.dataset.fxReadyButton = "true";
+        for (const counter of button.querySelectorAll("span")) {
+          if (!/^[A-Z0-9_-]{1,12}:\s*\d+$/i.test(counter.textContent.trim())) continue;
+          counter.style.setProperty("padding", ".12em .2em", "important");
+        }
         setReadyLabelWeight(button, readyLabel, selfIsReady);
         let badge = button.querySelector(".fx-ready-clan-badge");
         if (readyClanmate && ownClan) {
@@ -478,22 +753,48 @@ export function initializeLobbyEnhancements() {
     clanFilter.style.cssText += `;flex:1 1 7em;width:auto;min-width:6em;font-size:${filterFontSize()};border-width:.5px`;
     resetFilters.style.fontSize = followedFirst.style.fontSize = rankSort.style.fontSize = filterFontSize();
     resetFilters.style.borderWidth = followedFirst.style.borderWidth = rankSort.style.borderWidth = ".5px";
-    playerCount.style.fontSize = `clamp(10px, ${0.34 * fontScale()}em, 12px)`;
+    playerCount.style.fontSize = `clamp(10px, ${0.34 * fontScale()}em, 36px)`;
     controls.append(clanDashboard, search, readyFilter, followedFilter, clanFilter, followedFirst, rankSort, resetFilters, playerCount);
     list.parentElement.insertBefore(controls, list);
+    list.parentElement.style.setProperty("display", "flex", "important");
+    list.parentElement.style.setProperty("flex-direction", "column", "important");
+    list.parentElement.style.setProperty("flex", "1 1 auto", "important");
+    list.parentElement.style.setProperty("min-height", "0", "important");
+    list.parentElement.style.setProperty("height", "100%", "important");
+    controls.style.flex = "0 0 auto";
+    list.style.flex = "1 1 auto";
+    list.style.minHeight = "0";
+    list.style.overflowY = "auto";
+    list.style.overflowX = "hidden";
     let lobbyRoot = list.parentElement;
     for (let depth = 0; lobbyRoot.parentElement && depth < 2; depth++) lobbyRoot = lobbyRoot.parentElement;
     decorateLobbyTabIcons(lobbyRoot);
     const thinLobbyBorders = () => {
+      layoutLobbyModeTabs(lobbyRoot);
+      spaceLobbyMapButtons(lobbyRoot);
+      syncLobbyProgressHeight(lobbyRoot);
+      const footer = lobbyRoot.children[6];
+      if (footer) {
+        const footerActions = new Set([
+          ...footer.querySelectorAll("button, [role='button']"),
+          ...Array.from(footer.querySelectorAll("*")).filter(element =>
+            getComputedStyle(element).cursor === "pointer"),
+        ]);
+        for (const action of footerActions) {
+          action.style.setProperty("padding-block", "0", "important");
+        }
+      }
       for (const element of [lobbyRoot, ...lobbyRoot.querySelectorAll("*")]) {
         const style = getComputedStyle(element);
         if (element.matches("h1") && element.textContent.trim() === "Lobby") {
           element.style.setProperty("display", "none", "important");
         }
         if (!element.classList.contains("fx-lobby-filter-action")
+          && !element.classList.contains("fx-lobby-chat-player-tab")
+          && !element.classList.contains("fx-lobby-mode-tab")
           && element.matches("button, [role='button'], h1, h2, h3")) {
           const baseSize = element.matches("h1, h2, h3") ? 0.72 : 0.56;
-          const scaledSize = `clamp(12px, ${baseSize * fontScale()}em, 22px)`;
+          const scaledSize = `clamp(12px, ${baseSize * fontScale()}em, 66px)`;
           if (element.style.fontSize !== scaledSize) element.style.fontSize = scaledSize;
         }
         const hasBorder = [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth]

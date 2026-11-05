@@ -59,7 +59,7 @@ schemaEntries.estimatedAttackTroopMultiplier = { type: "number", min: 1, max: 4 
 schemaEntries.selfTerritoryOutlineWidth = { type: "number", min: 1, max: 6 };
 schemaEntries.selfTerritoryGlow = { type: "number", min: 0, max: 12 };
 schemaEntries.startingPercentage = { type: "number", min: 0, max: 100 };
-schemaEntries.lobbyFontScale = { type: "number", min: 75, max: 125 };
+schemaEntries.lobbyFontScale = { type: "number", min: 75, max: 300 };
 schemaEntries.densityDisplayStyle = { type: "string", values: ["percentage", "absoluteQuotient"] };
 for (const definition of Object.values(schemaEntries)) Object.freeze(definition);
 Object.freeze(schemaEntries.densityDisplayStyle.values);

@@ -77,9 +77,11 @@ function getLobbyResize(ast) {
             return found.length === 1 ? found[0].node : null;
         };
         const targets = {
+            resizeFunction: node.right,
             title: one(values => values.some(value => sameNumber(value, 0.05))),
             teamRow: one(values => values.some(value => sameNumber(value, 0.06)) && values.some(value => sameNumber(value, 0.03))),
             mapRow: one(values => values.some(value => sameNumber(value, 0.08)) && values.some(value => sameNumber(value, 0.03))),
+            mapInfoRow: one(values => values.some(value => sameNumber(value, 0.04)) && values.some(value => sameNumber(value, 0.02))),
             footer: one(values => values.some(value => sameNumber(value, 0.02)) && values.some(value => sameNumber(value, 0.01))),
         };
         if (Object.values(targets).every(Boolean)) candidates.push(targets);
@@ -95,16 +97,238 @@ function patchHeights(ast) {
     assertSingleNumber(targets.teamRow.value, 0.03);
     assertSingleNumber(targets.mapRow.value, 0.08);
     assertSingleNumber(targets.mapRow.value, 0.03);
+    assertSingleNumber(targets.mapInfoRow.value, 0.04);
+    assertSingleNumber(targets.mapInfoRow.value, 0.02);
     assertSingleNumber(targets.footer.value, 0.02);
     assertSingleNumber(targets.footer.value, 0.01);
     targets.title.value = replaceNumber(targets.title.value, 0.05, `${setting} ? 0 : .05`);
     const needsExtraLobbyHeight = "window.innerWidth < window.innerHeight || window.innerWidth / window.innerHeight > 4";
-    targets.teamRow.value = replaceNumber(targets.teamRow.value, 0.06, `${setting} ? (${needsExtraLobbyHeight} ? .055 : .04) : .06`);
-    targets.teamRow.value = replaceNumber(targets.teamRow.value, 0.03, `${setting} ? (${needsExtraLobbyHeight} ? .025 : .02) : .03`);
+    const lobbyFontScale = "Math.max(.75, Math.min(3, Number(__fx.settings.lobbyFontScale ?? 100) / 100))";
+    targets.teamRow.value = replaceNumber(targets.teamRow.value, 0.06, `${setting} ? .085 * ${lobbyFontScale} : .06`);
+    targets.teamRow.value = replaceNumber(targets.teamRow.value, 0.03, `${setting} ? (${needsExtraLobbyHeight} ? .025 : .02) * ${lobbyFontScale} : .03`);
     targets.mapRow.value = replaceNumber(targets.mapRow.value, 0.08, `${setting} ? (${needsExtraLobbyHeight} ? .06 : .04) : .08`);
     targets.mapRow.value = replaceNumber(targets.mapRow.value, 0.03, `${setting} ? (${needsExtraLobbyHeight} ? .025 : .02) : .03`);
+    const mapInfoHeight = targets.mapInfoRow.value.args[0];
+    const originalMapInfoHeight = mapInfoHeight.print_to_string();
+    targets.mapInfoRow.value.args[0] = parseExpression(`${setting} ? (${originalMapInfoHeight}) * ${lobbyFontScale} : (${originalMapInfoHeight})`);
+
+    const rowElement = row => {
+        const variableName = row.name.name;
+        const matches = assignments(targets.resizeFunction, node => isStyleAssignment(node, "height")
+            && node.right.TYPE === "Call"
+            && node.right.expression?.TYPE === "Dot"
+            && node.right.expression.property === "sT"
+            && node.right.args?.length === 1
+            && node.right.args[0].TYPE === "SymbolRef"
+            && node.right.args[0].name === variableName);
+        let candidates = matches;
+        if (candidates.length > 1) {
+            candidates = candidates.filter(heightAssignment => {
+                const elementName = heightAssignment.left.expression.expression.print_to_string();
+                const topAssignment = assignments(targets.resizeFunction, node => isStyleAssignment(node, "top")
+                    && node.left.expression.expression.print_to_string() === elementName);
+                return topAssignment.some(node => {
+                    let hasStackingOffset = false;
+                    node.right.walk(new AST.TreeWalker(child => {
+                        if (child.TYPE === "Binary" && child.operator === "+") hasStackingOffset = true;
+                    }));
+                    return hasStackingOffset;
+                });
+            });
+        }
+        if (candidates.length !== 1) throw new Error(`Expected one layout element for ${variableName}, found ${candidates.length}`);
+        return candidates[0].left.expression.expression;
+    };
+    const scaleRowFonts = row => {
+        const elementName = rowElement(row).print_to_string();
+        const fontAssignments = assignments(targets.resizeFunction, node => isStyleAssignment(node, "font")
+            && node.left.expression.expression.print_to_string() === elementName);
+        if (fontAssignments.length === 0) throw new Error(`Expected font assignments for ${elementName}`);
+        const scaledFont = expression => {
+            if (expression.TYPE !== "Call" || expression.args.length < 2) return null;
+            const clone = expression.clone(true);
+            const lastArgument = clone.args.length - 1;
+            clone.args[lastArgument] = parseExpression(`(${clone.args[lastArgument].print_to_string()}) * ${lobbyFontScale}`);
+            return clone;
+        };
+        for (const assignment of fontAssignments) {
+            let expression = scaledFont(assignment.right);
+            if (!expression && assignment.right.TYPE === "SymbolRef") {
+                const definitions = [];
+                walkWithoutNestedFunctions(targets.resizeFunction, node => {
+                    if (node.TYPE === "VarDef" && node.name.name === assignment.right.name && node.value?.TYPE === "Call") {
+                        definitions.push(node.value);
+                    }
+                });
+                if (definitions.length === 1) expression = scaledFont(definitions[0]);
+            }
+            if (expression) assignment.right = expression;
+        }
+    };
+    scaleRowFonts(targets.mapInfoRow);
+    scaleRowFonts(targets.teamRow);
     targets.footer.value = replaceNumber(targets.footer.value, 0.02, `${setting} ? .016 : .02`);
     targets.footer.value = replaceNumber(targets.footer.value, 0.01, `${setting} ? .007 : .01`);
+}
+
+function patchLobbyFlowLayout(ast) {
+    const targets = getLobbyResize(ast);
+    const resize = targets.resizeFunction;
+    const elementForRow = row => {
+        const variableName = row.name.name;
+        const matches = assignments(resize, node => isStyleAssignment(node, "height")
+            && node.right.TYPE === "Call"
+            && node.right.expression?.TYPE === "Dot"
+            && node.right.expression.property === "sT"
+            && node.right.args?.length === 1
+            && node.right.args[0].TYPE === "SymbolRef"
+            && node.right.args[0].name === variableName);
+        let candidates = matches;
+        if (candidates.length > 1) {
+            candidates = candidates.filter(heightAssignment => {
+                const elementName = heightAssignment.left.expression.expression.print_to_string();
+                const topAssignments = assignments(resize, node => isStyleAssignment(node, "top")
+                    && node.left.expression.expression.print_to_string() === elementName);
+                return topAssignments.some(node => {
+                    let stacked = false;
+                    node.right.walk(new AST.TreeWalker(child => {
+                        if (child.TYPE === "Binary" && child.operator === "+") stacked = true;
+                    }));
+                    return stacked;
+                });
+            });
+        }
+        if (candidates.length !== 1) throw new Error(`Expected one flow row for ${variableName}, found ${candidates.length}`);
+        return candidates[0].left.expression.expression;
+    };
+
+    const title = elementForRow(targets.title).print_to_string();
+    const modeTabs = elementForRow(targets.mapRow).print_to_string();
+    const currentMap = elementForRow(targets.mapInfoRow).print_to_string();
+    const nextMap = elementForRow(targets.teamRow).print_to_string();
+    const progress = elementForRow(targets.footer).print_to_string();
+    const bodyAssignments = assignments(resize, node => isStyleAssignment(node, "height")
+        && node.right.TYPE === "Call"
+        && node.right.expression?.TYPE === "Dot"
+        && node.right.expression.property === "sT"
+        && node.right.args?.length === 1
+        && (() => {
+            let hasViewportRatio = false;
+            node.right.args[0].walk(new AST.TreeWalker(child => {
+                if (child.TYPE === "Binary" && child.operator === "/") hasViewportRatio = true;
+            }));
+            return hasViewportRatio;
+        })());
+    if (bodyAssignments.length !== 1) throw new Error(`Expected one lobby body row, found ${bodyAssignments.length}`);
+    const body = bodyAssignments[0].left.expression.expression.print_to_string();
+
+    const rowNames = new Set([title, modeTabs, currentMap, nextMap, progress]);
+    const rootCounts = new Map();
+    ast.walk(new AST.TreeWalker(node => {
+        if (node.TYPE !== "Call" || node.expression?.TYPE !== "Dot"
+            || node.expression.property !== "appendChild" || node.args?.length !== 1) return;
+        const childName = node.args[0].print_to_string();
+        if (!rowNames.has(childName)) return;
+        const parentName = node.expression.expression.print_to_string();
+        rootCounts.set(parentName, (rootCounts.get(parentName) ?? 0) + 1);
+    }));
+    const rootCandidates = [...rootCounts].filter(([, count]) => count === rowNames.size);
+    if (rootCandidates.length !== 1) throw new Error(`Expected one lobby flow root, found ${rootCandidates.length}`);
+    const root = rootCandidates[0][0];
+
+    const modeResizeCalls = [];
+    let activeViewResize = null;
+    walkWithoutNestedFunctions(resize, node => {
+        if (node.TYPE !== "Call" || node.expression?.TYPE !== "Dot" || node.expression.property !== "resize") return;
+        if (node.args?.[0]?.print_to_string() === modeTabs
+            && node.expression.expression?.TYPE !== "This") {
+            modeResizeCalls.push(`${node.print_to_string()};`);
+        }
+    });
+    for (const statement of resize.body) {
+        if (statement.TYPE !== "If") continue;
+        let resizesBody = false;
+        walkWithoutNestedFunctions(statement, node => {
+            if (node.TYPE === "Call" && node.expression?.TYPE === "Dot"
+                && node.expression.property === "resize"
+                && node.expression.expression?.TYPE === "Dot"
+                && node.expression.expression.expression?.TYPE === "This"
+                && node.args?.[0]?.print_to_string() === body) resizesBody = true;
+        });
+        if (resizesBody) {
+            if (activeViewResize) throw new Error("Expected one active lobby view resize branch");
+            activeViewResize = statement.print_to_string();
+        }
+    }
+    if (modeResizeCalls.length !== 4 || !activeViewResize) {
+        throw new Error(`Expected four mode resizes and one active view resize; found ${modeResizeCalls.length}`);
+    }
+
+    const flowLayout = `if (${setting}) {
+        const __fxFlowRoot = ${root};
+        const __fxFlowSections = Array.from(__fxFlowRoot.children);
+        const __fxFlowExpected = [${title}, ${modeTabs}, ${currentMap}, ${nextMap}, ${body}, ${progress}];
+        if (__fxFlowSections.length === 7
+            && __fxFlowExpected.every((section, index) => __fxFlowSections[index] === section)) {
+            const __fxFlowScale = Math.max(.75, Math.min(3, Number(__fx.settings.lobbyFontScale ?? 100) / 100));
+            const __fxFlowSet = (element, property, value) => {
+                if (element.style.getPropertyValue(property) !== value
+                    || element.style.getPropertyPriority(property) !== "important") {
+                    element.style.setProperty(property, value, "important");
+                }
+            };
+            __fxFlowRoot.style.setProperty("display", "grid", "important");
+            __fxFlowRoot.style.setProperty("grid-template-columns", "minmax(0, 1fr)", "important");
+            __fxFlowRoot.style.setProperty("grid-template-rows",
+                "0px max-content minmax(1.5em, 2.2em) minmax(1.5em, 2.2em) "
+                + "minmax(0, 1fr) "
+                + "12px minmax(2.8em, max-content)", "important");
+            __fxFlowSections.forEach((section, index) => {
+                __fxFlowSet(section, "position", "relative");
+                __fxFlowSet(section, "top", "auto");
+                __fxFlowSet(section, "right", "auto");
+                __fxFlowSet(section, "bottom", "auto");
+                __fxFlowSet(section, "left", "auto");
+                __fxFlowSet(section, "width", "100%");
+                __fxFlowSet(section, "height", "auto");
+                __fxFlowSet(section, "max-height", "none");
+                __fxFlowSet(section, "min-width", "0");
+                __fxFlowSet(section, "box-sizing", "border-box");
+                __fxFlowSet(section, "grid-row", String(index + 1));
+            });
+            [__fxFlowSections[2], __fxFlowSections[3]].forEach(section => {
+                __fxFlowSet(section, "display", "flex");
+                __fxFlowSet(section, "align-items", "center");
+                __fxFlowSet(section, "justify-content", "center");
+                __fxFlowSet(section, "flex-wrap", "wrap");
+                __fxFlowSet(section, "column-gap", "1em");
+                __fxFlowSet(section, "row-gap", ".15em");
+                __fxFlowSet(section, "min-height", "max-content");
+                for (const child of section.children) {
+                    __fxFlowSet(child, "position", "static");
+                    __fxFlowSet(child, "top", "auto");
+                    __fxFlowSet(child, "right", "auto");
+                    __fxFlowSet(child, "bottom", "auto");
+                    __fxFlowSet(child, "left", "auto");
+                    __fxFlowSet(child, "width", "auto");
+                    __fxFlowSet(child, "height", "auto");
+                    __fxFlowSet(child, "max-width", "100%");
+                    __fxFlowSet(child, "min-width", "0");
+                }
+            });
+            __fxFlowSet(__fxFlowSections[4], "min-height", "0");
+            __fxFlowSet(__fxFlowSections[5], "height", "12px");
+            __fxFlowSet(__fxFlowSections[5], "min-height", "12px");
+            __fxFlowSet(__fxFlowSections[5], "max-height", "12px");
+            __fxFlowSet(__fxFlowSections[5], "overflow", "visible");
+            __fxFlowSet(__fxFlowSections[6], "min-height", "2.8em");
+            __fxFlowSections[6].style.removeProperty("max-height");
+            __fxFlowSet(__fxFlowSections[6], "padding-bottom", ".45em");
+            ${modeResizeCalls.join("\n            ")}
+            ${activeViewResize}
+        }
+    }`;
+    resize.body.push(AST.parse(flowLayout).body[0]);
 }
 
 function patchPlayerCardSpacing(ast) {
@@ -315,6 +539,7 @@ export function patchLobbyLayout(script) {
         results.push({ id, applied: true });
     };
 
+    apply("lobby-flow-layout-ast", patchLobbyFlowLayout);
     apply("lobby-heights-ast", patchHeights);
     apply("player-card-spacing-ast", patchPlayerCardSpacing);
     apply("player-card-width-ast", patchPlayerCardWidth);
