@@ -568,9 +568,10 @@ export function initializeLobbyEnhancements() {
       }
     }
     for (const element of divs) {
-      if (element.children.length < 8) continue;
       const rows = Array.from(element.children).filter(isPlayerRow);
-      if (rows.length >= 8) enhanceRoster(element);
+      // Small lobbies are valid too. Requiring eight rows skipped every lobby
+      // enhancement (including thin borders) when fewer players were present.
+      if (rows.length > 0) enhanceRoster(element);
     }
   }
 
