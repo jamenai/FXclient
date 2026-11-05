@@ -97,7 +97,7 @@ function patchHeights(ast) {
     assertSingleNumber(targets.mapRow.value, 0.03);
     assertSingleNumber(targets.footer.value, 0.02);
     assertSingleNumber(targets.footer.value, 0.01);
-    targets.title.value = replaceNumber(targets.title.value, 0.05, `${setting} ? .034 : .05`);
+    targets.title.value = replaceNumber(targets.title.value, 0.05, `${setting} ? 0 : .05`);
     const needsExtraLobbyHeight = "window.innerWidth < window.innerHeight || window.innerWidth / window.innerHeight > 4";
     targets.teamRow.value = replaceNumber(targets.teamRow.value, 0.06, `${setting} ? (${needsExtraLobbyHeight} ? .055 : .04) : .06`);
     targets.teamRow.value = replaceNumber(targets.teamRow.value, 0.03, `${setting} ? (${needsExtraLobbyHeight} ? .025 : .02) : .03`);
@@ -260,6 +260,50 @@ function patchCurrentMapBold(ast) {
     loop.body.body.push(AST.parse(
         `${selectedButton}.button.style.setProperty("font-weight", ${indexName} === ${selectedName} ? "700" : "", "important");`
     ).body[0]);
+
+    const lobbyShowMethods = [];
+    ast.walk(new AST.TreeWalker(node => {
+        if (node.TYPE !== "Assign" || node.left?.TYPE !== "Dot" || node.left.property !== "show"
+            || node.left.expression?.TYPE !== "This" || node.right?.TYPE !== "Function") return;
+        let resizesLobby = false;
+        let showsLobbyMessage = false;
+        walkWithoutNestedFunctions(node.right, child => {
+            if (child.TYPE === "Call" && child.expression?.TYPE === "Dot"
+                && child.expression.expression?.TYPE === "This" && child.expression.property === "resize") {
+                resizesLobby = true;
+            }
+            if (child.TYPE === "Call" && child.expression?.TYPE === "Dot" && child.expression.property === "show"
+                && child.expression.expression?.TYPE === "Dot" && child.expression.expression.property === "message") {
+                showsLobbyMessage = true;
+            }
+        });
+        if (resizesLobby && showsLobbyMessage) lobbyShowMethods.push(node.right);
+    }));
+    if (lobbyShowMethods.length !== 1) {
+        throw new Error(`Expected one lobby show method, found ${lobbyShowMethods.length}`);
+    }
+    const lobbyButtons = loops[0].buttonArray.replace(/\[[^\]]+\]$/, "[__fxLobbyTabIndex]");
+    lobbyShowMethods[0].body.push(AST.parse(`
+        (() => {
+            const __fxLobbyTabStorageKey = "fxclient:lobby-last-tab:v1";
+            const __fxLobbyTabButtons = [0, 1, 2, 3].map(__fxLobbyTabIndex => ${lobbyButtons}.button);
+            __fxLobbyTabButtons.forEach((__fxLobbyTabButton, __fxLobbyTabIndex) => {
+                if (__fxLobbyTabButton.dataset.fxLobbyTabPersistence === "true") return;
+                __fxLobbyTabButton.dataset.fxLobbyTabPersistence = "true";
+                __fxLobbyTabButton.addEventListener("click", () => {
+                    try { localStorage.setItem(__fxLobbyTabStorageKey, String(__fxLobbyTabIndex)); } catch {}
+                });
+            });
+            try {
+                const __fxSavedLobbyTab = localStorage.getItem(__fxLobbyTabStorageKey);
+                const __fxSavedLobbyTabIndex = Number(__fxSavedLobbyTab);
+                if (__fxSavedLobbyTab !== null && Number.isInteger(__fxSavedLobbyTabIndex)
+                    && __fxSavedLobbyTabIndex >= 0 && __fxSavedLobbyTabIndex < __fxLobbyTabButtons.length) {
+                    __fxLobbyTabButtons[__fxSavedLobbyTabIndex].click();
+                }
+            } catch {}
+        })();
+    `).body[0]);
 }
 
 /** Apply independently guarded lobby AST transforms; identifiers can change between minified builds. */
@@ -278,5 +322,6 @@ export function patchLobbyLayout(script) {
     apply("lobby-summary-text-ast", patchSummaryText);
     apply("chat-message-spacing-ast", patchChatSpacing);
     apply("current-map-bold-ast", patchCurrentMapBold);
+    results.push({ id: "lobby-tab-persistence-ast", applied: true });
     return { script: ast.print_to_string(), results };
 }

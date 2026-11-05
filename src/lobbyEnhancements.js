@@ -487,6 +487,9 @@ export function initializeLobbyEnhancements() {
     const thinLobbyBorders = () => {
       for (const element of [lobbyRoot, ...lobbyRoot.querySelectorAll("*")]) {
         const style = getComputedStyle(element);
+        if (element.matches("h1") && element.textContent.trim() === "Lobby") {
+          element.style.setProperty("display", "none", "important");
+        }
         if (!element.classList.contains("fx-lobby-filter-action")
           && element.matches("button, [role='button'], h1, h2, h3")) {
           const baseSize = element.matches("h1, h2, h3") ? 0.72 : 0.56;
