@@ -15,7 +15,7 @@ export default definePatch(({ replaceRawCode, matchRawCode, matchCode }) => {
 
     // Resolve the rank argument passed to the lobby's rank formatter. The
     // separate role field controls account-name colors and is not the rank.
-    const { rankField } = matchRawCode(
+    const { roleField, rankField, levelField } = matchRawCode(
         `var text=entry.username;text+="   "+container.lj.aGD(entry.roleField,entry.rankField,entry.levelField);`
     );
 
@@ -35,7 +35,9 @@ export default definePatch(({ replaceRawCode, matchRawCode, matchCode }) => {
         s0.dataset.fxAccountName = __fxAccountName;
         s0.dataset.fxSelf = bq.lJ.ub(qu) ? "true" : "false";
         s0.dataset.fxLobbyPlayer = "true";
+        s0.style.color = bq.lj.vm(qu.${roleField});
         s0.dataset.fxRank = __fx.utils.getLobbyPlayerRank(qu.${rankField}) ?? "";
+        s0.dataset.fxRankText = bq.lj.aGD(qu.${roleField}, qu.${rankField}, qu.${levelField});
         if (s0.dataset.fxRank) {
             s0.dataset.fxRankLabel = "#" + s0.dataset.fxRank;
             s0.classList.add("fx-lobby-rank-label");
@@ -76,6 +78,6 @@ export default definePatch(({ replaceRawCode, matchRawCode, matchCode }) => {
             }
         }
         __fxIsFollowed&&(s0.style.textDecoration="underline");`,
-        { uT: grouping, uU: teamsArray, ipField, username, roomIndex, ownEntry, rankField }
+        { uT: grouping, uU: teamsArray, ipField, username, roomIndex, ownEntry, roleField, rankField, levelField }
     );
 });

@@ -1,5 +1,5 @@
 {
-  "name": "fxclient",
+  "name": "zfx-client",
   "version": "0.5.3",
   "description": "A modded territorial.io client",
   "main": "index.js",
@@ -27,7 +27,9 @@
     "core-js": "^3.44.0",
     "js-beautify": "^1.14.11",
     "obscenity": "^0.4.6",
-    "uglify-js": "^3.19.2"
+    "uglify-js": "^3.19.2",
+    "vue": "^3.5.42",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "webpack": "^5.95.0"

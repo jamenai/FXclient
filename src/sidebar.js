@@ -1,3 +1,5 @@
+import { createVueSidebar as mountVueSidebar } from "./vueSidebar.js";
+
 const COLLAPSED_STORAGE_KEY = "fx_sidebar_collapsed";
 const EXPANDED_WIDTH = 220;
 const COLLAPSED_WIDTH = 56;
@@ -95,7 +97,7 @@ function makeButton(text, title, action, className = "") {
   return button;
 }
 
-export function createSidebar() {
+function createLegacySidebar() {
   let enabled = window.__fx?.settings?.showSidebar !== false;
   let hasLobbySnapshot = false;
   let mode = window.innerWidth < 900 ? "collapsed" : "expanded";
@@ -115,13 +117,17 @@ export function createSidebar() {
   if (!shell) throw new Error("FX game shell is missing from the page");
   const sidebar = document.createElement("aside");
   sidebar.id = "fx-sidebar";
-  sidebar.setAttribute("aria-label", "FX Client sidebar");
+  sidebar.setAttribute("aria-label", "ZFX Client sidebar");
 
   const heading = document.createElement("div");
   heading.className = "fx-sidebar-heading";
-  heading.textContent = "ZULUS FX";
+  heading.textContent = "ZULUS ZFX";
 
   const translate = key => window.__fx?.translateFX?.(key) ?? key;
+  const translationTargets = [];
+  const registerTranslationTarget = (element, key, apply) => {
+    translationTargets.push(() => apply(translate(key), element));
+  };
   const modeControls = document.createElement("div");
   modeControls.className = "fx-sidebar-mode-actions";
   const createModeAction = (icon, className, action) => {
@@ -154,6 +160,7 @@ export function createSidebar() {
   const lobbyHeading = document.createElement("div");
   lobbyHeading.className = "fx-sidebar-lobby-heading";
   lobbyHeading.textContent = translate("sidebarLobbyLabel");
+  registerTranslationTarget(lobbyHeading, "sidebarLobbyLabel", (text, element) => { element.textContent = text; });
   const lobbySummary = document.createElement("div");
   lobbySummary.className = "fx-sidebar-lobby-summary";
   const lobbySkill = document.createElement("div");
@@ -180,24 +187,33 @@ export function createSidebar() {
     const sectionHeading = document.createElement("div");
     sectionHeading.className = "fx-sidebar-section-heading";
     sectionHeading.textContent = translate(labelKey);
+    registerTranslationTarget(sectionHeading, labelKey, (text, element) => { element.textContent = text; });
     section.append(sectionHeading);
     navigation.appendChild(section);
     for (const [icon, labelKey, action] of actions) {
       const label = translate(labelKey);
-      section.append(makeButton(icon, label, action, "fx-sidebar-action"));
+      const button = makeButton(icon, label, action, "fx-sidebar-action");
+      registerTranslationTarget(button, labelKey, (text, element) => {
+        element.title = text;
+        element.setAttribute("aria-label", text);
+        const labelElement = element.querySelector(".fx-sidebar-label");
+        if (labelElement) labelElement.textContent = text;
+      });
+      section.append(button);
     }
   };
 
   appendSection("sidebarGeneralGroup", [
     ["home", "sidebarHome", () => window.__fx?.openHome?.()],
     ["⚔️", "sidebarMultiplayer", () => window.__fx?.startMultiplayer?.()],
-    ["🏆", "sidebarLeaderboard", () => window.__fx?.openGameMenuAction?.("leaderboard")],
+    ["🏆", "sidebarLeaderboard", () => window.__fx?.openVueLeaderboards?.()],
     ["▶", "sidebarReplays", () => window.__fx?.openGameMenuAction?.("replays")],
     ["📜", "sidebarLogs", () => window.__fx?.openGameMenuAction?.("logs")],
   ]);
   appendSection("sidebarAccountGroup", [
     ["⚙", "sidebarGameSettings", () => window.__fx?.openGameMenuAction?.("settings")],
-    ["settings", "sidebarSettings", () => window.__fx?.WindowManager?.openWindow("settings")],
+    ["settings", "sidebarSettings", () => typeof window.__fx?.openVueSettings === "function"
+      ? window.__fx.openVueSettings() : window.__fx?.WindowManager?.openWindow("settings")],
     ["🔑", "sidebarAccount", () => window.__fx?.openAccount?.()],
     ["🧈", "sidebarGoldTransfer", () => window.__fx?.openGameMenuAction?.("goldTransfer")],
   ]);
@@ -435,6 +451,12 @@ export function createSidebar() {
     requestResize();
   }
 
+  function refreshTranslations() {
+    for (const update of translationTargets) update();
+    updateLayout();
+    updateLobbyStatus();
+  }
+
   window.addEventListener("resize", updateLayout);
   updateLayout();
   updateLobbyStatus();
@@ -455,7 +477,18 @@ export function createSidebar() {
     },
     isEnabled: () => enabled,
     requestResize() { requestResize(); },
+    refreshTranslations,
     setResizeHandler(handler) { if (typeof handler === "function") requestResize = handler; },
     isCollapsed: () => mode !== "expanded" || window.innerWidth < MOBILE_BREAKPOINT,
   };
+}
+
+export function createSidebar() {
+  return window.__fx?.settings?.vueSidebar === true
+    ? createVueSidebar()
+    : createLegacySidebar();
+}
+
+function createVueSidebar() {
+  return mountVueSidebar();
 }

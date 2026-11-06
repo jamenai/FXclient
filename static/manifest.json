@@ -1,6 +1,6 @@
 {
-    "name": "FX Client",
-    "short_name": "FXclient",
+    "name": "ZFX Client",
+    "short_name": "ZFX",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#000000",

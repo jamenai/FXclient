@@ -21,7 +21,7 @@ function getFlagImage(countryCode) {
       (0x1f1e6 + character.charCodeAt(0) - 65).toString(16)
     ).join("-");
     image.onload = () => window.__fx?.sidebar?.requestResize?.();
-    image.onerror = () => console.warn(`[FXClient] Could not load the ${countryCode.toUpperCase()} flag image.`);
+    image.onerror = () => console.warn(`[ZFX Client] Could not load the ${countryCode.toUpperCase()} flag image.`);
     image.src = `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${regionalIndicators}.svg`;
     flagImages.set(countryCode, image);
   }

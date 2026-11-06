@@ -1,8 +1,16 @@
 /** Creates the saved replay settings section with its required services injected. */
 export function createReplayHistoryList({ history, closeSettings, saveFile, createButton, copyToClipboard, showAlert }) {
   function ReplayHistoryList(container) {
+    const t = key => window.__fx?.translateFX?.(key) ?? key;
     const title = document.createElement("p");
-    title.innerHTML = "<b>Saved Replays</b> (auto-saves your last 5 games)";
+    title.innerHTML = "<b></b>";
+    const titleSuffix = document.createTextNode("");
+    title.append(titleSuffix);
+    const updateTitle = () => {
+      title.querySelector("b").textContent = t("settingSavedReplays").split(" (")[0];
+      titleSuffix.nodeValue = " " + (t("settingSavedReplays").match(/\(.*\)$/)?.[0] ?? "");
+    };
+    updateTitle();
     container.append(title);
   
     const list = document.createElement("div");
@@ -10,11 +18,11 @@ export function createReplayHistoryList({ history, closeSettings, saveFile, crea
   
     function formatTime(timestamp) {
       const minutes = Math.floor((Date.now() - timestamp) / 60000);
-      if (minutes < 1) return "just now";
-      if (minutes < 60) return minutes + "m ago";
+      if (minutes < 1) return t("settingJustNow");
+      if (minutes < 60) return t("settingMinutesAgo").replace("{count}", minutes);
       const hours = Math.floor(minutes / 60);
-      if (hours < 24) return hours + "h ago";
-      return Math.floor(hours / 24) + "d ago";
+      if (hours < 24) return t("settingHoursAgo").replace("{count}", hours);
+      return t("settingDaysAgo").replace("{count}", Math.floor(hours / 24));
     }
   
     function render() {
@@ -22,7 +30,7 @@ export function createReplayHistoryList({ history, closeSettings, saveFile, crea
       const replays = history.getAll();
       if (!replays.length) {
         const empty = document.createElement("small");
-        empty.innerText = "No replays saved yet. Finish a game and it'll show up here.";
+        empty.innerText = t("settingNoSavedReplays");
         list.append(empty);
         return;
       }
@@ -37,21 +45,21 @@ export function createReplayHistoryList({ history, closeSettings, saveFile, crea
         label.innerText = formatTime(replay.timestamp);
         label.style.flex = "1";
   
-        const loadBtn = createButton("Load", () => {
+        const loadBtn = createButton(t("settingLoad"), () => {
           closeSettings();
           history.load(replay.data, replay.timestamp);
         })
-        const copyBtn = createButton("Copy", () => {
+        const copyBtn = createButton(t("settingCopy"), () => {
             copyToClipboard(replay.data).then(() => {
-            copyBtn.innerText = "Copied!";
-            setTimeout(() => (copyBtn.innerText = "Copy"), 1500);
-          }).catch(() => showAlert("Failed to copy"));
+            copyBtn.innerText = t("settingCopied");
+            setTimeout(() => (copyBtn.innerText = t("settingCopy")), 1500);
+          }).catch(() => showAlert(t("settingFailedCopy")));
         });
-        const deleteBtn = createButton("Delete", () => {
+        const deleteBtn = createButton(t("settingDelete"), () => {
           history.remove(replay.timestamp);
           render();
         });
-        const downloadBtn = createButton("Download", () =>
+        const downloadBtn = createButton(t("settingDownload"), () =>
           saveFile(replay.data, `replay_${replay.timestamp}.txt`, "text/plain"),
         )
         row.append(label, loadBtn, copyBtn, downloadBtn, deleteBtn);
@@ -89,7 +97,7 @@ export function createReplayHistoryList({ history, closeSettings, saveFile, crea
       return `${minutes}:${String(remainder).padStart(2, "0")}`;
     }
   
-    this.update = render;
+    this.update = function () { updateTitle(); render(); };
   }
   return ReplayHistoryList;
 }

@@ -8,15 +8,15 @@
   </a>
 </p>
 <p align="center">
-  <a href="https://discord.gg/Hzqm6NSRp"><img alt="Zulus FXClient Discord" src="https://img.shields.io/badge/Discord-Zulus%20FXClient-5865F2?logo=discord&logoColor=white"></a>
+  <a href="https://discord.gg/Hzqm6NSRp"><img alt="ZFX Client Discord" src="https://img.shields.io/badge/Discord-ZFX%20Client-5865F2?logo=discord&logoColor=white"></a>
   <a href="https://github.com/jamenai/FXclient/actions/workflows/deploy_github_pages.yml"><img src="https://github.com/jamenai/FXclient/actions/workflows/deploy_github_pages.yml/badge.svg" alt="Build and Publish to GitHub Pages"></a>
   <a href="https://jamenai.github.io/FXclient/"><img src="https://github.com/jamenai/FXclient/actions/workflows/pages/pages-build-deployment/badge.svg" alt="pages-build-deployment"></a>
 </p>
 
-## Zulus FXClient
-Zulus FXClient is an independently maintained fork of the original FX Client for Territorial.io. It keeps the core FX Client features and adds its own lobby, player-list, and in-game improvements.
+## ZFX Client
+ZFX Client is an independently maintained fork of the original FX Client for Territorial.io. It keeps the core features and adds its own lobby, player-list, and in-game improvements.
 
-**Use the latest Zulus FXClient here: https://jamenai.github.io/FXclient/**
+**Use the latest ZFX Client here: https://jamenai.github.io/FXclient/**
 
 ### Zulus-specific features
 1. A compact lobby layout with filters for readiness, followed players, and clan members
@@ -25,7 +25,7 @@ Zulus FXClient is an independently maintained fork of the original FX Client for
 4. An estimated troop count for eliminating a territory, alongside density information
 5. Settings to customize these lobby and in-game enhancements
 
-### Core FX Client features
+### Features inherited from the original FX Client
 1. It's free and open source on Github
 2. It's ad-free and removes the game's default ads
 3. It makes game look cooler, by replacing default assets with new ones
@@ -40,7 +40,7 @@ Zulus FXClient is an independently maintained fork of the original FX Client for
 12. Makes replays more useful by auto-saving recent games and adding a seek bar for rewinding/fast-forwarding replays
 13. Can be installed as a PWA (progressive web app) and works offline both as an installed app and in the browser
 
-#### Zulus FXClient also includes a settings menu to:
+#### ZFX Client also includes a settings menu to:
 
 14. Make fullscreen mode trigger automatically
 15. Set a custom main menu background
@@ -77,9 +77,9 @@ npm start
 The preview port can be changed on Windows PowerShell with:
 
 ```
-$env:FXCLIENT_PORT=8080; npm run serve
+$env:ZFXCLIENT_PORT=8080; npm run serve
 ```
 
 ## Community
 
-For community discussion, join the Zulus FXClient Discord: https://discord.gg/Hzqm6NSRp
+For community discussion, join the ZFX Client Discord: https://discord.gg/Hzqm6NSRp

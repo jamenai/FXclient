@@ -1,15 +1,16 @@
 const truncate = n => parseFloat(n.toFixed(12));
 
 export function KeybindsInput(/** @type {HTMLElement} */ containerElement) {
+    const t = key => window.__fx?.translateFX?.(key) ?? key;
 
     const header = document.createElement("p");
     const heading = document.createElement("b");
-    heading.innerText = "Attack Percentage Keybinds";
+    heading.innerText = t("settingAttackKeybinds");
     header.append(heading);
     const keybindContainer = document.createElement("div");
     keybindContainer.className = "arrayinput";
     const keybindAddButton = document.createElement("button");
-    keybindAddButton.innerText = "Add";
+    keybindAddButton.innerText = t("settingAdd");
     containerElement.append(header, keybindContainer, keybindAddButton);
 
     containerElement.className = "keybinds-input";
@@ -23,13 +24,15 @@ export function KeybindsInput(/** @type {HTMLElement} */ containerElement) {
     };
     keybindAddButton.addEventListener("click", this.addObject.bind(this));
     this.update = function (settings) {
+        heading.innerText = t("settingAttackKeybinds");
+        keybindAddButton.innerText = t("settingAdd");
         this.objectArray = settings.attackPercentageKeybinds;
         this.displayObjects();
     }
     this.displayObjects = function () {
         // Clear the content of the container
         this.container.innerHTML = "";
-        if (this.objectArray.length === 0) return this.container.innerText = "No custom attack percentage keybinds added";
+        if (this.objectArray.length === 0) return this.container.innerText = t("settingNoAttackKeybinds");
         // Loop through the array and display input fields for each object
         for (var i = 0; i < this.objectArray.length; i++) {
             this.container.appendChild(createInputRow(i));
@@ -43,7 +46,7 @@ export function KeybindsInput(/** @type {HTMLElement} */ containerElement) {
         });
         // Button to delete the object
         var deleteButton = document.createElement("button");
-        deleteButton.textContent = "Delete";
+        deleteButton.textContent = t("settingDelete");
         deleteButton.addEventListener("click", this.deleteObject.bind(this, i));
         objectDiv.appendChild(deleteButton);
 
@@ -52,12 +55,18 @@ export function KeybindsInput(/** @type {HTMLElement} */ containerElement) {
     this.createInputField = function (i, property) {
         let inputField = document.createElement(property === "type" ? "select" : "input");
         if (property === "type") {
-            inputField.innerHTML = '<option value="absolute">Absolute</option><option value="relative">Relative</option>';
+            const absolute = document.createElement("option");
+            absolute.value = "absolute";
+            absolute.textContent = t("settingAbsolute");
+            const relative = document.createElement("option");
+            relative.value = "relative";
+            relative.textContent = t("settingRelative");
+            inputField.append(absolute, relative);
             inputField.addEventListener("change", this.updateObject.bind(this, i, property));
         } else if (property === "key") {
             inputField.type = "text";
             inputField.setAttribute("readonly", "");
-            inputField.setAttribute("placeholder", "No key set");
+            inputField.setAttribute("placeholder", t("settingNoKeySet"));
             inputField.addEventListener("click", this.startKeyInput.bind(this, i, property));
         } else { // property === "value"
             const isAbsolute = this.objectArray[i].type === "absolute";
@@ -76,7 +85,7 @@ export function KeybindsInput(/** @type {HTMLElement} */ containerElement) {
         this.container.children[index].children[this.objectKeys.indexOf(property)].replaceWith(this.createInputField(index, property))
     };
     this.startKeyInput = function (index, property, event) {
-        event.target.value = "Press any key";
+        event.target.value = t("settingPressAnyKey");
         const handler = this.updateObject.bind(this, index, property);
         event.target.addEventListener('keydown', handler, { once: true });
         event.target.addEventListener("blur", () => {

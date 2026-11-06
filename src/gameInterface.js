@@ -45,7 +45,7 @@ function isArrayLike(value) {
  * @param {() => Record<string, string>} getDictionary
  */
 export function createGameInterface(getTarget, getDictionary, onInvalidValue = (name, value) => {
-    console.warn(`[FXClient] Ignoring game value "${name}" with unexpected shape:`, value);
+    console.warn(`[ZFX Client] Ignoring game value "${name}" with unexpected shape:`, value);
 }) {
     const getPath = (...keys) => keys.reduce((value, key) => value?.[getDictionary()[key]], getTarget());
     const reportedInvalidValues = new Set();

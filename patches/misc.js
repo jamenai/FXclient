@@ -1,7 +1,7 @@
 import { definePatch, insert } from "../modUtils.js"
 import { styleText } from "node:util";
 
-export default definePatch(({ insertCode, modifyCode, replaceCode }) => {
+export default definePatch(({ insertCode, modifyCode, replaceCode, replaceRawCode }) => {
 
   // Display tick number near the moving bars in the balance box
   modifyCode(`zH.fillStyle = eh === 9 ? bD.pD : bD.o5;
@@ -22,22 +22,25 @@ export default definePatch(({ insertCode, modifyCode, replaceCode }) => {
 		${insert(`if (__fx.settings.displayTickNumber)
       zH.fillText(9 - eh, Math.floor(aAv * 2 + aBA), Math.floor(0.3 * this.j));`)}`)
 
-  // Add FX Client version info to the game version window
+  // Add ZFX Client version info to the game version window
   modifyCode(`4, 1, new g(__L(), b.c + "<br>" + d.e.f("/changelog")
-    ${insert(` + "<br><br><b>" + "FX Client v" + __fx.version
-      + "<br><a href='https://discord.gg/Hzqm6NSRp' target='_blank'>Zulus FXClient Discord server</a>"
+    ${insert(` + "<br><br><b>" + "ZFX Client v" + __fx.version
+      + "<br><a href='https://discord.gg/Hzqm6NSRp' target='_blank'>ZFX Client Discord server</a>"
       + "<br><a href='https://github.com/jamenai/FXclient' target='_blank'>Github repository</a></b>"`)} /*...*/)`)
   
   // Hide propaganda popup
+  // The native propaganda dialog is appended directly to body; put its backdrop
+  // above custom lobby and Vue views so the whole prompt remains visible.
+  replaceRawCode('w9.style.zIndex="6"', 'w9.style.zIndex="2147483647"');
   insertCode(`/* here */
     a = b.c + 60 * 1000;
     (new ea()).show(eS.eb, eS.colors, eS.id);
     eS = null;
-    return true;`, `if (__fx.settings.hidePropagandaPopup || __fx.customLobby.isActive()) return;`)
+    return true;`, `if (__fx.settings.hidePropagandaPopup) return;`)
   modifyCode(`if (!a.b.c(0)) {
 			d = e.f + 1000 * 1;
 			return;
-		} ${insert(`if (!__fx.settings.hidePropagandaPopup && !__fx.customLobby.isActive())`)} a.g.h(5);`)
+		} ${insert(`if (!__fx.settings.hidePropagandaPopup)`)} a.g.h(5);`)
 
   // Don't reload FX users to main terri page.
   replaceCode(

@@ -1,25 +1,26 @@
 import { gameOptions, mapOptions, contestOptions, refreshMapOptions, ANY, NONE } from "./lobbyFilters.js";
 
 export function LobbyReminderRulesInput(containerElement) {
+    const t = key => window.__fx?.translateFX?.(key) ?? key;
     const header = document.createElement("p");
     const heading = document.createElement("b");
-    heading.innerText = "Reminder rules";
+    heading.innerText = t("settingReminderRules");
     header.append(heading);
     const note = document.createElement("small");
-    note.innerText = "You'll get a notification in lobby whenever a game matching one of these rules is about to start.";
+    note.innerText = t("settingReminderRulesNote");
     containerElement.append(header, note, document.createElement("br"));
 
     this.fields = [
-        { key: "game", label: "Game", options: gameOptions },
-        { key: "map", label: "Map", options: mapOptions },
-        { key: "contest", label: "Contest", options: contestOptions }
+        { key: "game", label: "settingReminderGame", options: gameOptions },
+        { key: "map", label: "settingReminderMap", options: mapOptions },
+        { key: "contest", label: "settingReminderContest", options: contestOptions }
     ];
 
     const columnHeader = document.createElement("div");
     columnHeader.className = "reminder-rules-header";
     this.fields.forEach(field => {
         const label = document.createElement("span");
-        label.innerText = field.label;
+        label.innerText = t(field.label);
         columnHeader.append(label);
     });
     columnHeader.append(document.createElement("span"));
@@ -28,7 +29,7 @@ export function LobbyReminderRulesInput(containerElement) {
     const rulesContainer = document.createElement("div");
     rulesContainer.className = "arrayinput";
     const addButton = document.createElement("button");
-    addButton.innerText = "Add";
+    addButton.innerText = t("settingAdd");
     containerElement.append(rulesContainer, addButton);
 
     containerElement.className = "keybinds-input";
@@ -42,6 +43,10 @@ export function LobbyReminderRulesInput(containerElement) {
     };
     addButton.addEventListener("click", this.addRule.bind(this));
     this.update = function (settings) {
+        heading.innerText = t("settingReminderRules");
+        note.innerText = t("settingReminderRulesNote");
+        this.fields.forEach((field, index) => columnHeader.children[index].textContent = t(field.label));
+        addButton.innerText = t("settingAdd");
         this.rules = (settings.lobbyReminderRules || []).map(rule => ({ game: ANY, map: ANY, contest: ANY, ...rule }));
         this.displayRules();
     };
@@ -51,7 +56,7 @@ export function LobbyReminderRulesInput(containerElement) {
     this.displayRules = function () {
         this.container.innerHTML = "";
         columnHeader.style.display = this.rules.length === 0 ? "none" : "";
-        if (this.rules.length === 0) return this.container.innerText = "No reminder rules added";
+        if (this.rules.length === 0) return this.container.innerText = t("settingNoReminderRules");
         for (let i = 0; i < this.rules.length; i++) this.container.appendChild(createRow.call(this, i));
     };
     const createRow = function (index) {
@@ -59,7 +64,7 @@ export function LobbyReminderRulesInput(containerElement) {
         row.className = "reminder-rule-row";
         this.fields.forEach(field => row.appendChild(createSelect.call(this, index, field)));
         const deleteButton = document.createElement("button");
-        deleteButton.textContent = "Delete";
+        deleteButton.textContent = t("settingDelete");
         deleteButton.addEventListener("click", this.deleteRule.bind(this, index));
         row.appendChild(deleteButton);
         return row;
@@ -69,7 +74,8 @@ export function LobbyReminderRulesInput(containerElement) {
         field.options.forEach(option => {
             const optionElement = document.createElement("option");
             optionElement.setAttribute("value", option.value);
-            optionElement.innerText = option.label;
+            const optionTranslations = { None: "settingNone", Any: "settingAny", "All Teams": "settingAllTeams", Yes: "settingYes", No: "settingNo" };
+            optionElement.innerText = optionTranslations[option.label] ? t(optionTranslations[option.label]) : option.label;
             select.append(optionElement);
         });
         if (field.key === "map") refreshMapOptions(select);

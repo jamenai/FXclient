@@ -26,9 +26,14 @@ export function createCustomQuickEmojis({ getQuickEmojis, getEmojiTile }) {
   function CustomQuickEmojis(container) {
     const label = document.createElement("label");
     label.className = "checkbox";
-    label.append("Use custom quick emojis ");
+    const labelText = document.createTextNode("");
+    label.append(labelText);
     const note = document.createElement("small");
-    note.innerText = "Choose the 9 emojis shown in the in-game quick-emoji bar, in order, instead of them being picked automatically based on usage. Click \"Save Settings\" below to apply.";
+    const updateLanguage = () => {
+      labelText.nodeValue = window.__fx?.translateFX?.("settingQuickEmojis") ?? "Use custom quick emojis";
+      note.innerText = window.__fx?.translateFX?.("settingQuickEmojisNote") ?? "Choose the 9 emojis shown in the in-game quick-emoji bar, in order, instead of them being picked automatically based on usage. Click \"Save Settings\" below to apply.";
+    };
+    updateLanguage();
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     const checkmark = document.createElement("span");
@@ -168,6 +173,7 @@ export function createCustomQuickEmojis({ getQuickEmojis, getEmojiTile }) {
     };
   
     this.update = function (currentSettings) {
+      updateLanguage();
       checkbox.checked = !!currentSettings.customQuickEmojisEnabled;
       updateVisibility();
       (currentSettings.customQuickEmojis || []).forEach((entry, i) => {

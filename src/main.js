@@ -3,6 +3,7 @@ const { version, lastUpdated, isSignificant } = versionData;
 
 import settingsManager from './settings.js';
 import { initializeLobbyEnhancements } from "./lobbyEnhancements.js";
+import { initializeCustomLobbyView } from "./customLobbyView.js";
 import { clanFilter, leaderboardFilter } from "./clanFilters.js";
 import WindowManager from "./windowManager.js";
 import donationsTracker from "./donationsTracker.js";
@@ -17,6 +18,7 @@ import { reportError } from './debugging.js';
 import replayHistory from './replayHistory.js';
 import replay, { initializeReplayTimebar } from './replay.js';
 import lobbyReminders from './lobbyReminders.js';
+import lobbyChatFeed from './lobbyChatFeed.js';
 import pingFilter from './pingFilter.js';
 import nameFilter from './nameFilter.js';
 import followedAccounts from './followedAccounts.js';
@@ -25,7 +27,11 @@ import savedAccounts from './savedAccounts.js';
 import { installSelfTerritoryHighlight } from "./selfTerritoryHighlight.js";
 import { initializeWorldClock } from "./worldClock.js";
 import { createSidebar } from "./sidebar.js";
-import { getVar } from "./gameInterface.js";
+import { createVueSettingsView } from "./vueSettingsView.js";
+import { createVueHomeView } from "./homeView.js";
+import { createVueReplayView } from "./replayView.js";
+import { createVueLeaderboardsView } from "./leaderboardsView.js";
+import { getVar, getGameMapNames } from "./gameInterface.js";
 import { publishFxBridge } from "./fxBridge.js";
 
 // Stable bridge used by injected game patches. Keep this surface explicit:
@@ -50,6 +56,7 @@ const fxBridge = publishFxBridge(window, {
   replayHistory,
   replay,
   lobbyReminders,
+  lobbyChatFeed,
   pingFilter,
   nameFilter,
   followedAccounts,
@@ -57,6 +64,7 @@ const fxBridge = publishFxBridge(window, {
   savedAccounts,
   selfTerritoryHighlight: { install: installSelfTerritoryHighlight },
   getGameVar: getVar,
+  getGameMapNames,
 });
 
 const savedVersion = localStorage.getItem("fx_version");
@@ -66,9 +74,14 @@ if (savedVersion !== version && !fxBridge.isCustomLobbyVersion) {
 }
 
 initializeLobbyEnhancements();
+initializeCustomLobbyView();
+createVueSettingsView(settingsManager);
+createVueHomeView();
+createVueReplayView();
+createVueLeaderboardsView();
 initializeReplayTimebar();
 const sidebar = createSidebar();
 fxBridge.sidebar = sidebar;
 initializeWorldClock(sidebar.getClockSlot(), sidebar.isCollapsed);
 
-console.log('Successfully loaded FX Client');
+console.log('Successfully loaded ZFX Client');

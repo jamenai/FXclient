@@ -60,7 +60,7 @@ function applyPatches(/** @type {ModUtils} */ modUtils) {
     // Add update information
     replaceRawCode(`new k("🚀 New Game Update","The game was updated! Please reload the game. An internet connection is required.",!0,[`,
         `new k("🚀 New Game Update","The game was updated! Please reload the game. An internet connection is required."
-        + "<div style='border: white; border-width: 1px; border-style: solid; margin: 10px; padding: 5px;'><h2>FX Client is not yet compatible with the latest version of the game.</h2><p>Updates should normally be available within a few hours.<br>You can still use FX to play in singleplayer mode.</p></div>",!0,[`
+        + "<div style='border: white; border-width: 1px; border-style: solid; margin: 10px; padding: 5px;'><h2>ZFX Client is not yet compatible with the latest version of the game.</h2><p>Updates should normally be available within a few hours.<br>You can still use ZFX in singleplayer mode.</p></div>",!0,[`
     );
 
     // Max size for custom maps: from 4096x4096 to 8192x8192
@@ -93,7 +93,7 @@ function applyPatches(/** @type {ModUtils} */ modUtils) {
         // add buttons
         replaceRawCode(`,new nQ("☰<br>"+__L(),function(){aD6(3)},aa.ks),new nQ("",function(){at.d5(12)},aa.kg,!1)]`,
             `,new nQ("☰<br>"+__L(),function(){aD6(3)},aa.ks),new nQ("",function(){at.d5(12)},aa.kg,!1),
-            new nQ("FX Client settings", function() { __fx.WindowManager.openWindow("settings"); }, "rgba(0, 0, 20, 0.5)"),
+            new nQ("ZFX Client settings", function() { if(typeof __fx.openVueSettings==="function")__fx.openVueSettings();else __fx.WindowManager.openWindow("settings"); }, "rgba(0, 0, 20, 0.5)"),
             new nQ("Join/Create custom lobby", function() { __fx.customLobby.showJoinPrompt(); }, "rgba(20, 9, 77, 0.5)")]`)
         // set position
         replaceRawCode(`aZ.g5.vO(aD3[3].button,x+a0S+gap,a3X+h+gap,a0S,h);`,
@@ -164,23 +164,32 @@ function applyPatches(/** @type {ModUtils} */ modUtils) {
         socketCloseHandlerPattern,
         `$&if(${errorCode}===4215&&__fx.multiplayerRetryAvailableUntil>Date.now()){__fx.multiplayerRetryAvailableUntil=0;${socketManager}.${closeConnections}(3260);__fx.multiplayerResetUntil=Date.now()+1000;__fx.multiplayerStartPending=true;setTimeout(()=>{__fx.multiplayerStartPending=false;__fx.startMultiplayer(true)},1050);return;}`
     );
-    const homeMethodPattern = /this\.(?<homeMethod>\w+)=function\(\)\{(?<menuManager>\w+)\.\w+\(5,5\)\}/g;
-    const { menuManager } = matchOne(homeMethodPattern).groups;
+    const homeMethodPattern = /this\.(?<homeMethod>\w+)=function\(\)\{(?<menuManager>\w+)\.(?<menuStateMethod>\w+)\(5,5\)\}/g;
+    const { menuManager, menuStateMethod } = matchOne(homeMethodPattern).groups;
+    const menuStateFieldPattern = new RegExp(
+        `this\\.${menuStateMethod}=function\\((?<stateArgument>\\w+)[^)]*\\)\\{(?<setterBody>[^}]*?this\\.tZ\\(\\)[^}]*?this\\.(?<menuStateField>\\w+)===\\k<stateArgument>)`, "g"
+    );
+    const stateFieldMatches = [...modUtils.script.matchAll(menuStateFieldPattern)];
+    if (stateFieldMatches.length !== 1) throw new Error(`Expected one native menu state field, found ${stateFieldMatches.length}.`);
+    const { menuStateField } = stateFieldMatches[0].groups;
     replaceOne(
         homeMethodPattern,
-        `$&,window.__fx.openHome=()=>{${socketManager}.${closeConnections}(3260);__fx.multiplayerResetUntil=Date.now()+1000;this.$<homeMethod>()}`
+        `$&,(()=>{let attempts=0;const install=()=>{if(window.__fx?.installNativeLobbyRouteObserver?.(${menuManager},${JSON.stringify(menuStateMethod)},${JSON.stringify(menuStateField)}))return;if(++attempts<120)setTimeout(install,250)};install()})();window.__fx.openHome=()=>{${socketManager}.${closeConnections}(3260);__fx.multiplayerResetUntil=Date.now()+1000;this.$<homeMethod>()}`
     );
     const accountMenuButtonsPattern = /for\(var (?<index>\w+)=0;\k<index><(?<buttons>\w+)\.length;\k<index>\+\+\)\k<buttons>\[\k<index>\]\.button\.style\.position="absolute";/g;
     const { buttons: accountMenuButtons } = matchOne(accountMenuButtonsPattern).groups;
+    const homeNameInputPattern = /(?<nameInput>\w+)\s*=\s*new\s+\w+\(\s*(?<settingsBuffer>\w+)\.buffer\.data\[122\]\s*\)\s*;/g;
+    const { nameInput, settingsBuffer } = matchOne(homeNameInputPattern).groups;
+    replaceOne(homeNameInputPattern, `$&window.__fx.getNativeHomeNameInput=()=>${nameInput}.e;window.__fx.getNativeAccountId=()=>${settingsBuffer}.buffer.data[105]?.value||"";window.__fx.setNativeHomeName=value=>{var input=${nameInput}.e;if(!input)return false;input.value=String(value).slice(0,20);input.dispatchEvent(new Event("blur"));return true};`);
     const { openMenuAction } = matchOne(
         /function (?<openMenuAction>\w+)\(\w+\)\{\w+\.\w+\.setState\(10\)/g
     ).groups;
-    replaceOne(accountMenuButtonsPattern, `$&__fx.openAccount=function(){${accountMenuButtons}[2].button.click()};__fx.startMultiplayer=function(isRetry){if(__fx.multiplayerStartPending)return;if(!isRetry)__fx.multiplayerRetryAvailableUntil=Date.now()+10000;var wait=__fx.multiplayerResetUntil-Date.now();if(wait>0){__fx.multiplayerStartPending=true;setTimeout(()=>{__fx.multiplayerStartPending=false;__fx.startMultiplayer(isRetry)},wait+50);return;}if(__fx.isSocketActive(0)){if(${socketManager}.${isConnectedMethod}(0))${accountMenuButtons}[0].button.click();return;}${accountMenuButtons}[0].button.click()};__fx.openGameMenuAction=function(key){${openMenuAction}(3);__fx.gameMenuActions?.[key]?.()};`);
+    replaceOne(accountMenuButtonsPattern, `$&__fx.openAccount=function(){${accountMenuButtons}[2].button.click()};__fx.openCustomScenario=function(){${accountMenuButtons}[1].button.click()};__fx.openGameMenu=function(){${accountMenuButtons}[3].button.click()};__fx.isMultiplayerConnected=()=>__fx.isSocketActive(0)&&${socketManager}.${isConnectedMethod}(0);__fx.reconnectMultiplayer=function(){if(!__fx.isMultiplayerConnected())return false;if(__fx.multiplayerStartPending)return true;__fx.multiplayerRetryAvailableUntil=0;${socketManager}.${closeConnections}(3260);__fx.multiplayerResetUntil=Date.now()+1000;__fx.multiplayerStartPending=true;setTimeout(()=>{__fx.multiplayerStartPending=false;__fx.startMultiplayer(true)},1050);return true};__fx.startMultiplayer=function(isRetry){if(__fx.multiplayerStartPending)return;if(!isRetry)__fx.multiplayerRetryAvailableUntil=Date.now()+10000;var wait=__fx.multiplayerResetUntil-Date.now();if(wait>0){__fx.multiplayerStartPending=true;setTimeout(()=>{__fx.multiplayerStartPending=false;__fx.startMultiplayer(isRetry)},wait+50);return;}if(__fx.isSocketActive(0)){if(${socketManager}.${isConnectedMethod}(0))${accountMenuButtons}[0].button.click();return;}${accountMenuButtons}[0].button.click()};__fx.openGameMenuAction=function(key){${openMenuAction}(3);__fx.gameMenuActions?.[key]?.()};`);
     const gameMenuActionsPattern = /(?<buttons>\w+)\s*=\s*\[new\s+x\(L\(481\),[\s\S]*?\](?=\s*,\s*\w+\s*=\s*\[)/g;
     const { buttons: gameMenuButtons } = matchOne(gameMenuActionsPattern).groups;
     replaceOne(
         gameMenuActionsPattern,
-        `$&,window.__fx.runSidebarGameMenuAction=(key,labelId)=>{var label=L(labelId);var item=${gameMenuButtons}.find(entry=>entry.button.textContent.includes(label));if(!item){console.error("[FXClient] Sidebar menu action is unavailable after a game update:",key);return false;}item.button.click();return true;};window.__fx.gameMenuActions={leaderboard:()=>__fx.runSidebarGameMenuAction("leaderboard",368),logs:()=>__fx.runSidebarGameMenuAction("logs",418),replays:()=>__fx.runSidebarGameMenuAction("replays",444),goldTransfer:()=>__fx.runSidebarGameMenuAction("goldTransfer",483),settings:()=>__fx.runSidebarGameMenuAction("settings",450)}`
+        `$&,window.__fx.runSidebarGameMenuAction=(key,labelId)=>{var label=L(labelId);var item=${gameMenuButtons}.find(entry=>entry.button.textContent.includes(label));if(!item){console.error("[ZFX Client] Sidebar menu action is unavailable after a game update:",key);return false;}item.button.click();return true;};window.__fx.gameMenuActions={leaderboard:()=>__fx.runSidebarGameMenuAction("leaderboard",368),logs:()=>__fx.runSidebarGameMenuAction("logs",418),replays:()=>__fx.runSidebarGameMenuAction("replays",444),goldTransfer:()=>__fx.runSidebarGameMenuAction("goldTransfer",483),settings:()=>__fx.runSidebarGameMenuAction("settings",450)}`
     );
     const { viewportWidth, viewportHeight, dimension } = matchOne(
         /(?<viewportWidth>\w+)=(?<dimension>\w+)\(document\.documentElement\.clientWidth\)(?=,(?<viewportHeight>\w+)=\k<dimension>\(window\.visualViewport)/g

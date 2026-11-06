@@ -484,6 +484,9 @@ function patchCurrentMapBold(ast) {
     loop.body.body.push(AST.parse(
         `${selectedButton}.button.style.setProperty("font-weight", ${indexName} === ${selectedName} ? "700" : "", "important");`
     ).body[0]);
+    loop.body.body.push(AST.parse(
+        `${selectedButton}.button.dataset.fxLobbyModeActive = ${indexName} === ${selectedName} ? "true" : "false";`
+    ).body[0]);
 
     const lobbyShowMethods = [];
     ast.walk(new AST.TreeWalker(node => {

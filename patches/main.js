@@ -54,7 +54,7 @@ export function applyPatchRegistry(modUtils, registry = patchRegistry) {
         if (names.has(name)) throw new Error(`Duplicate game patch registration: ${name}`);
         if (typeof patch !== "function") throw new Error(`Invalid game patch registration: ${name}`);
         names.add(name);
-        console.info(`[FXClient] Applying game patch: ${name}`);
+        console.info(`[ZFX Client] Applying game patch: ${name}`);
         patch(modUtils);
     }
 }

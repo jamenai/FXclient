@@ -12,7 +12,19 @@ export default definePatch(({ matchRawCode, replaceRawCode }) => {
             this.sendMethod("@["+clanTag+"] join");
             if(pendingState){this.sendMethod("yes");}
         };
-        window.__fx.sendClanJoinMessage=function(clanTag){this.sendClanJoinMessage(clanTag);}.bind(this);`,
+        this.sendClanMessage=function(clanTag,message){
+            if(typeof clanTag!=="string"||!clanTag.trim()||typeof message!=="string"||!message.trim())return;
+            this.sendMethod("@["+clanTag+"] "+message.trim());
+            if(pendingState){this.sendMethod("yes");}
+            return true;
+        };
+        window.__fx.sendLobbyMessage=function(message){
+            if(typeof message!=="string"||!message.trim())return false;
+            this.sendMethod(message);
+            return true;
+        }.bind(this);
+        window.__fx.sendClanJoinMessage=function(clanTag){this.sendClanJoinMessage(clanTag);}.bind(this);
+        window.__fx.sendClanMessage=function(clanTag,message){return this.sendClanMessage(clanTag,message);}.bind(this);`,
         { sendMethod }
     );
 });

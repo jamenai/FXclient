@@ -15,7 +15,7 @@ export function mergeSettings(defaults, candidate) {
 }
 
 /** Loads settings safely; invalid or damaged stored JSON falls back to defaults. */
-export function loadSettings(serialized, defaults, onInvalid = error => console.warn("[FXClient] Could not load saved settings:", error)) {
+export function loadSettings(serialized, defaults, onInvalid = error => console.warn("[ZFX Client] Could not load saved settings:", error)) {
   if (serialized === null || serialized === undefined || serialized === "") return { ...defaults };
   try {
     return mergeSettings(defaults, JSON.parse(serialized));

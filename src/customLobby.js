@@ -23,7 +23,7 @@ if (customLobbiesUnavailable) {
         name: "customLobbiesUnavailable",
         closeWithButton: true
     });
-    window.innerHTML =  `<p>The latest version of FX Client doesn't support custom lobbies yet. Use the stable version at <a href="https://jamenai.github.io/FXclient/">https://jamenai.github.io/FXclient/</a></p>`;
+    window.innerHTML =  `<p>The latest version of ZFX Client doesn't support custom lobbies yet. Use the stable version at <a href="https://jamenai.github.io/FXclient/">https://jamenai.github.io/FXclient/</a></p>`;
 }
 
 const windowElement = WindowManager.create({

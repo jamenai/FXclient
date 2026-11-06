@@ -50,6 +50,7 @@ export default (/** @type {ModUtils} */ { modifyCode, insertCode, replaceCode, r
 		g.h();
 		i.j.setState(0);
 		MenuManager.setState(0);
+		${insert(`__fx.onGameReturnedToLobby?.();`)}
 		${insert(`if (!__fx.customLobby.isActive()) `)} k.l.m(n);
 		${insert(`if (__fx.customLobby.isActive()) __fx.customLobby.rejoinLobby();
             else`)} if (this.o === 2) {/*...*/}`)

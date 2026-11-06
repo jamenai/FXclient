@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const buildRoot = path.resolve(projectRoot, "build");
-const port = Number.parseInt(process.env.FXCLIENT_PORT ?? "4173", 10);
+const port = Number.parseInt(process.env.ZFXCLIENT_PORT ?? process.env.FXCLIENT_PORT ?? "4173", 10);
 
 const mimeTypes = {
   ".css": "text/css; charset=utf-8",
@@ -59,6 +59,6 @@ const server = http.createServer((request, response) => {
 });
 
 server.listen(port, () => {
-  console.log(`FX Client preview: http://localhost:${port}`);
+  console.log(`ZFX Client preview: http://localhost:${port}`);
   console.log("Press Ctrl+C to stop the local server.");
 });
