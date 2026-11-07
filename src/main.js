@@ -34,6 +34,7 @@ import { createVueLeaderboardsView } from "./leaderboardsView.js";
 import { createVueLogsView } from "./logsView.js";
 import { createVueGameSettingsView } from "./gameSettingsView.js";
 import { createVueMyAccountView, myAccountAdapter } from "./myAccountView.js";
+import { initializeUpdatePromptView } from "./updatePromptView.js";
 import { getVar, getGameMapNames } from "./gameInterface.js";
 import { publishFxBridge } from "./fxBridge.js";
 
@@ -78,6 +79,7 @@ if (savedVersion !== version && !fxBridge.isCustomLobbyVersion) {
 }
 
 initializeLobbyEnhancements();
+initializeUpdatePromptView();
 initializeCustomLobbyView();
 createVueSettingsView(settingsManager);
 createVueHomeView();

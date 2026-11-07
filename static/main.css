@@ -55,14 +55,37 @@
 	z-index         : 10;
 }
 
-#updateNotification {
-	top: 16px !important;
-	right: 16px !important;
-	left: auto !important;
-	width: min(520px, calc(100vw - 32px)) !important;
-	margin: 0 !important;
-	z-index: 2147483646 !important;
+.fx-update-prompt {
+	position: fixed;
+	top: 16px;
+	right: 16px;
+	left: auto;
+	width: min(540px, calc(100vw - 32px));
+	max-width: none;
+	max-height: calc(100vh - 32px);
+	margin: 0;
+	padding: 0;
+	border: 1px solid rgba(110, 190, 231, .28);
+	border-radius: 15px;
+	background: linear-gradient(145deg, #10283b, #091725 78%);
+	color: #eaf5fc;
+	font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+	box-shadow: 0 18px 58px rgba(0, 0, 0, .6), inset 0 1px rgba(255, 255, 255, .05);
+	z-index: 2147483647;
 }
+
+.fx-update-prompt::backdrop { background: rgba(2, 8, 15, .24); }
+.fx-update-prompt[open] { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; }
+.fx-update-prompt-mark { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid rgba(81, 223, 161, .28); border-radius: 12px; background: rgba(29, 148, 107, .16); color: #62e6ae; font-size: 1.65em; }
+.fx-update-prompt-content { min-width: 0; }
+.fx-update-prompt-eyebrow { color: #76dcb4; font-size: .68em; font-weight: 800; letter-spacing: .14em; }
+.fx-update-prompt h2 { margin: 3px 0 4px; color: #f1f8fd; font-size: 1.2em; line-height: 1.25; }
+.fx-update-prompt p { margin: 0; color: #a9bdcd; font-size: .86em; }
+.fx-update-prompt-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.fx-update-prompt-actions button { min-height: 34px; padding: 7px 12px; border: 1px solid rgba(144, 183, 212, .2); border-radius: 8px; color: #dfeef7; font: inherit; font-size: .8em; font-weight: 700; cursor: pointer; }
+.fx-update-prompt-dismiss { background: rgba(24, 42, 59, .8); }
+.fx-update-prompt-apply { border-color: rgba(65, 223, 150, .34) !important; background: linear-gradient(105deg, #177a58, #159a69); color: #effff7 !important; }
+.fx-update-prompt-actions button:hover { filter: brightness(1.15); }
 
 body:has(#fx-custom-lobby-view) .window {
 	z-index: 10000;
@@ -699,6 +722,13 @@ td {
 	font-weight: 750;
 	letter-spacing: .08em;
 	text-transform: uppercase;
+}
+
+.fx-lobby-notification-sender {
+	display: block;
+	margin: 2px 0 4px;
+	font-size: .92em;
+	font-weight: 750;
 }
 
 .fx-lobby-notification p {

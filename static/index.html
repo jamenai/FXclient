@@ -61,14 +61,8 @@
 
     function showUpdatePrompt(/** @type {ServiceWorker} */ sw) {
       console.log("showing update prompt")
-      const notification = document.getElementById("updateNotification");
-      // The game shell is a transformed stacking context. Keep this prompt at
-      // body level so its z-index can place it above Vue lobby and home views.
-      if (notification.parentElement !== document.body) document.body.append(notification);
-      notification.style.display = "block";
-      document.getElementById("swUpdateButton").addEventListener("click", () => {
-        sw.postMessage({ update: true });
-      })
+      window.__fxPendingUpdateWorker = sw;
+      window.dispatchEvent(new CustomEvent("fx-update-available", { detail: { worker: sw } }));
     }
 
     document.addEventListener("DOMContentLoaded", function () {
@@ -179,11 +173,6 @@
       <table>
         <tbody id="donationhistory_content"></tbody>
       </table>
-    </div>
-    <div class="window" style="display: none" id="updateNotification">
-      <h3>A new version of FX is available! Click the "Update" button below to update</h3>
-      <button id="swUpdateButton">Update</button>
-      <button onclick="document.getElementById('updateNotification').style.display = 'none'">Dismiss</button>
     </div>
   </span>
   <script src="variables.js?buildTimestamp"></script>

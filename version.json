@@ -1,9 +1,9 @@
 {
-    "version": "0.1.9",
+    "version": "0.1.10",
     "lastUpdated": "November 7",
     "changes": [
-        "Enable the new Vue sidebar, home screen, and alternative lobby view by default",
-        "Add player context menus with account mentions and a chat input reset button"
+        "Render the update prompt as a top-layer Vue dialog",
+        "Show lobby notification senders with account colors and separate message text"
     ],
     "isSignificant": true
 }

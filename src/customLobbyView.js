@@ -63,6 +63,22 @@ function resolveLobbyChatSegments(text) {
   return segments;
 }
 
+function formatLobbyNotification(text) {
+  const source = String(text ?? "").trim();
+  const senderMatch = source.match(/^@([a-zA-Z0-9_-]{5})(?::\s*|\s+|$)([\s\S]*)$/);
+  if (senderMatch) {
+    const senderName = window.__fx?.resolveLobbyChatMention?.(senderMatch[1]);
+    if (senderName) {
+      return {
+        senderName,
+        senderColor: window.__fx?.resolveLobbyChatMentionColor?.(senderMatch[1]) || "",
+        body: senderMatch[2].trim(),
+      };
+    }
+  }
+  return { senderName: "", senderColor: "", body: resolveLobbyChatMentions(source) };
+}
+
 function getLobbyList(scope) {
   return Array.from(scope.querySelectorAll("div"))
     .map(element => ({
@@ -873,13 +889,14 @@ const LobbyView = defineComponent({
     }
 
     function handleLobbyNotification(event) {
-      const text = resolveLobbyChatMentions(event.detail?.text).trim();
+      const text = String(event.detail?.text ?? "").trim();
       if (!text) return;
+      const presentation = formatLobbyNotification(text);
       const sourceIndex = Number.isInteger(event.detail?.index) ? event.detail.index : null;
       const id = sourceIndex === null ? `${Date.now()}:${Math.random().toString(36).slice(2)}` : `native:${sourceIndex}`;
       const existingIndex = lobbyNotifications.value.findIndex(item => item.id === id);
       if (existingIndex >= 0) {
-        lobbyNotifications.value[existingIndex] = { ...lobbyNotifications.value[existingIndex], text };
+        lobbyNotifications.value[existingIndex] = { ...lobbyNotifications.value[existingIndex], text, ...presentation };
         notificationIndex.value = existingIndex;
         notificationPanelOpen.value = true;
         return;
@@ -887,6 +904,7 @@ const LobbyView = defineComponent({
       const nextNotifications = [...lobbyNotifications.value, {
         id,
         text,
+        ...presentation,
         category: Number(event.detail?.id) === 7 ? "Lobby" : "Hinweis",
       }];
       while (nextNotifications.length > 100) nextNotifications.shift();
@@ -1052,7 +1070,8 @@ const LobbyView = defineComponent({
         .slice(-100)
         .map(item => ({
           id: `native:${item.index}`,
-          text: resolveLobbyChatMentions(item.text),
+          text: String(item.text ?? "").trim(),
+          ...formatLobbyNotification(item.text),
           category: Number(item.id) === 7 ? "Lobby" : "Hinweis",
         }));
       notificationIndex.value = lobbyNotifications.value.length - 1;
@@ -1159,7 +1178,8 @@ const LobbyView = defineComponent({
         </div>
         <article class="fx-lobby-notification">
           <span class="fx-lobby-notification-category">{{ currentLobbyNotification.category }}</span>
-          <p>{{ currentLobbyNotification.text }}</p>
+          <strong v-if="currentLobbyNotification.senderName" class="fx-lobby-notification-sender" :style="currentLobbyNotification.senderColor ? { color: currentLobbyNotification.senderColor } : null">{{ currentLobbyNotification.senderName }}</strong>
+          <p>{{ currentLobbyNotification.body || currentLobbyNotification.text }}</p>
         </article>
       </aside>
       <div v-if="playerContextMenu" class="fx-custom-lobby-chat-menu-backdrop" @click="playerContextMenu = null" @keydown.esc="playerContextMenu = null">
