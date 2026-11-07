@@ -4,7 +4,7 @@ const defaultValues = Object.freeze({
   showCountryFlagsOnLand: false,
   showWorldClock: true,
   showSidebar: true,
-  vueSidebar: false,
+  vueSidebar: true,
   useFullscreenMode: false,
   hoveringTooltip: true,
   realisticNames: false,

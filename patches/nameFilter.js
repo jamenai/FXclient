@@ -39,6 +39,10 @@ export default definePatch(({ replaceCode }) => {
         };
     }`, `lobbyPlayers.createEntry = function (playerId, playerUsername, rankValue, levelValue, badgeValue, eloValue, colorValue, goldValue, ipHashValue, nameCode) {
         window.__fx.getLobbyChatMentionToken = accountId => utils.base64.encode(accountId, 5);
+        const accountIds = window.__fx.lobbyChatAccountIdsByName || (window.__fx.lobbyChatAccountIdsByName = Object.create(null));
+        window.__fx.getLobbyChatSenderIdByName = name => accountIds[String(name ?? "").trim().toLocaleLowerCase()] ?? null;
+        accountIds[String(playerUsername ?? "").trim().toLocaleLowerCase()] = playerId;
+        accountIds[String(__fx.nameFilter.filter(playerUsername) ?? "").trim().toLocaleLowerCase()] = playerId;
         return {
             playerId: playerId,
             playerUsername: nameCode ? __fx.nameFilter.filter(playerUsername) : "Player " + utils.base64.encode(playerId, 2),

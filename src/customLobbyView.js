@@ -1,5 +1,5 @@
 import {
-  computed, defineComponent, onBeforeUnmount, onMounted, ref, shallowRef, watch,
+  computed, defineComponent, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch,
 } from "vue/dist/vue.esm-bundler.js";
 import { createApp, h } from "vue/dist/vue.esm-bundler.js";
 import { createMemoryHistory, createRouter, RouterView } from "vue-router";
@@ -303,7 +303,7 @@ const getLobbyLabels = () => {
     readinessFilters: "Bereitschaftsfilter", affiliationFilters: "Zugehörigkeitsfilter", resetFilters: "Filter zurücksetzen",
     rank: "Rang", status: "Status", online: "Online", noPlayers: "Keine Spieler gefunden",
     sort: "Sortierung", sortRankDesc: "Rang absteigend", sortRankAsc: "Rang aufsteigend", sortName: "Name (A–Z)",
-    clanTitle: "Clan-Übersicht", chat: "Chat", calls: "Calls", joinCont: "Join Cont", join: "Join", joinNext: "Join {map} {count} teams", nextGame: "nächstes Spiel", chatPlaceholder: "Nachricht an die Lobby …",
+    clanTitle: "Clan-Übersicht", chat: "Chat", calls: "Calls", joinCont: "Join Cont", join: "Join", joinNext: "Join {map} {count} teams", nextGame: "nächstes Spiel", chatPlaceholder: "Nachricht an die Lobby …", clear: "Leeren",
     teamMessagePlaceholder: "Nachricht ans Team schreiben …", send: "Senden", messageSent: "Clan-Nachricht gesendet", messageSendFailed: "Clan-Nachricht konnte nicht gesendet werden",
     spawnCallHint: "Wähle einen Kartenbereich. Dein Clan erhält den Call im Lobby-Chat.", spawnDirections: "Spawn-Bereich auswählen",
     topLeft: "Oben links", top: "Oben", topRight: "Oben rechts", left: "Links", center: "Mitte", right: "Rechts", bottomLeft: "Unten links", bottom: "Unten", bottomRight: "Unten rechts",
@@ -326,7 +326,7 @@ const getLobbyLabels = () => {
     readinessFilters: "Readiness filters", affiliationFilters: "Affiliation filters", resetFilters: "Reset filters",
     rank: "Rank", status: "Status", online: "Online", noPlayers: "No players found",
     sort: "Sort", sortRankDesc: "Rank descending", sortRankAsc: "Rank ascending", sortName: "Name (A–Z)",
-    clanTitle: "Clan overview", chat: "Chat", calls: "Calls", joinCont: "Join Cont", join: "Join", joinNext: "Join {map} {count} teams", nextGame: "next game", chatPlaceholder: "Message the lobby …",
+    clanTitle: "Clan overview", chat: "Chat", calls: "Calls", joinCont: "Join Cont", join: "Join", joinNext: "Join {map} {count} teams", nextGame: "next game", chatPlaceholder: "Message the lobby …", clear: "Clear",
     teamMessagePlaceholder: "Write a message to your team …", send: "Send", messageSent: "Clan message sent", messageSendFailed: "Could not send clan message",
     spawnCallHint: "Choose an area of the map. Your clan will receive the call in lobby chat.", spawnDirections: "Choose spawn area",
     topLeft: "Top left", top: "Top", topRight: "Top right", left: "Left", center: "Center", right: "Right", bottomLeft: "Bottom left", bottom: "Bottom", bottomRight: "Bottom right",
@@ -356,6 +356,8 @@ const LobbyView = defineComponent({
     const notificationPanelOpen = ref(false);
     const currentLobbyNotification = computed(() => lobbyNotifications.value[notificationIndex.value] ?? null);
     const activeTab = ref("overview");
+    const playerContextMenu = ref(null);
+    const playerListComponent = ref(null);
     const selfReadiness = ref("not-ready");
     let optimisticReadinessUntil = 0;
     const active = ref(false);
@@ -632,6 +634,7 @@ const LobbyView = defineComponent({
         }
         return {
           id: row.dataset.fxPlayerId || `${name}-${index}`,
+          senderId: window.__fx?.getLobbyChatSenderIdByName?.(name) ?? null,
           name,
           clan: getPlayerClan(name),
           readiness: row.dataset.fxLobbyReady || "unknown",
@@ -822,6 +825,41 @@ const LobbyView = defineComponent({
       }
       if (tab !== "chat") findNativePlayerTab(nativeRoot)?.click();
       [80, 220].forEach(delay => window.setTimeout(scheduleRead, delay));
+    }
+
+    function openPlayerContextMenu(player, event) {
+      event?.preventDefault();
+      event?.stopPropagation();
+      if (!player?.name) return;
+      playerContextMenu.value = {
+        senderId: player.senderId,
+        senderName: player.name,
+        x: Math.max(8, Math.min(event?.clientX ?? 8, window.innerWidth - 176)),
+        y: Math.max(8, Math.min(event?.clientY ?? 8, window.innerHeight - 54)),
+      };
+    }
+
+    async function mentionPlayerFromContextMenu() {
+      const player = playerContextMenu.value;
+      if (!player) return;
+      playerContextMenu.value = null;
+      selectLobbyTab("chat");
+      await nextTick();
+      await nextTick();
+
+      let token = "";
+      try {
+        const accountId = Number(player.senderId
+          ?? window.__fx?.getLobbyChatSenderIdByName?.(player.senderName));
+        if (Number.isInteger(accountId)) token = String(window.__fx?.getLobbyChatMentionToken?.(accountId) ?? "").trim();
+      } catch (error) {
+        console.warn("[ZFX Client LobbyView] Could not resolve account mention ID:", error);
+      }
+      if (!token) {
+        console.warn("[ZFX Client LobbyView] Account mention ID is not available for this player.", player);
+        return;
+      }
+      playerListComponent.value?.insertMentionToken?.(token);
     }
 
     function handleBotProtectionState(event) {
@@ -1085,9 +1123,10 @@ const LobbyView = defineComponent({
       lobbyNotifications, notificationIndex, notificationPanelOpen, currentLobbyNotification,
       previousLobbyNotification, nextLobbyNotification,
       ownClan, clanPlayers, clanReadyCount, teamCount, clanCount, playerCountLabel, onlyReadyClans, visibleClanGroups, chatStatus, activeMode, isTeamMode,
+      playerContextMenu, playerListComponent, mentionPlayerFromContextMenu,
       selfReadiness,
       selectMode,
-      selectPlayer: player => player.nativeElement?.click(),
+      selectPlayer: openPlayerContextMenu,
       setSort: value => { sortBy.value = ["rank-desc", "rank-asc", "name"].includes(value) ? value : "rank-asc"; },
       setReadyFilter: value => { readyFilter.value = readyFilter.value === value ? "all" : value; },
       setAffiliationFilter: value => { affiliationFilter.value = affiliationFilter.value === value ? "all" : value; },
@@ -1123,11 +1162,17 @@ const LobbyView = defineComponent({
           <p>{{ currentLobbyNotification.text }}</p>
         </article>
       </aside>
+      <div v-if="playerContextMenu" class="fx-custom-lobby-chat-menu-backdrop" @click="playerContextMenu = null" @keydown.esc="playerContextMenu = null">
+        <div class="fx-custom-lobby-chat-context-menu" role="menu" :style="{ left: playerContextMenu.x + 'px', top: playerContextMenu.y + 'px' }" @click.stop>
+          <strong>{{ playerContextMenu.senderName }}</strong>
+          <button type="button" role="menuitem" @click="mentionPlayerFromContextMenu">@ {{ labels.mention }}</button>
+        </div>
+      </div>
       </Teleport>
       <MapHeader :map="snapshot.currentMap" :map-image="snapshot.currentMapImage" :next-map="snapshot.nextMap" :next-team-count-label="snapshot.nextTeamCountLabel" :is-contest="snapshot.isContest" :next-is-contest="snapshot.nextIsContest" :no-fullsend="snapshot.noFullsend" :next-no-fullsend="snapshot.nextNoFullsend" :labels="labels" :modes="snapshot.modes" :ready-count="snapshot.readyCount" :ready-clans="readyClanSlices" :ready-clan-total="readyClanTotal" :team-count="activeMode?.teamCountLabel || ''" :lobby-rating="lobbyRating" :ready-state="selfReadiness" :ready-disabled="!snapshot.playerCount" @select-mode="selectMode" @ready="setReady" />
       <LobbyProgress :snapshot="snapshot" :labels="labels" />
       <main class="fx-custom-lobby-content">
-        <PlayerList :players="filteredPlayers" :all-players="snapshot.players" :clans="visibleClanGroups" :labels="labels" :count="snapshot.playerCount" :player-count-label="playerCountLabel" :query="query" :sort-by="sortBy" :ready-filter="readyFilter" :affiliation-filter="affiliationFilter" :active-tab="activeTab" :chat-messages="snapshot.chatMessages" :chat-status="chatStatus" :team-mode="isTeamMode" :team-players="filteredTeamPlayers" :team-clan="ownClan" :team-count="teamCount" :clan-count="clanCount" :top-ready-clan="topReadyClan" :only-ready-clans="onlyReadyClans" :current-map="snapshot.currentMap" :next-map="snapshot.nextMap" :next-team-count="snapshot.nextTeamCountLabel" @update:query="query = $event" @update:sort="setSort" @update:ready-filter="setReadyFilter" @update:affiliation-filter="setAffiliationFilter" @reset-filter-groups="resetFilterGroups" @reset-filters="resetFilters" @filter-ready-clans="onlyReadyClans = $event" @select-player="selectPlayer" @select-tab="selectLobbyTab" @send-chat="sendChat" @send-call="sendCall" @send-join="sendJoin" @send-team-message="sendTeamMessage" />
+        <PlayerList ref="playerListComponent" :players="filteredPlayers" :all-players="snapshot.players" :clans="visibleClanGroups" :labels="labels" :count="snapshot.playerCount" :player-count-label="playerCountLabel" :query="query" :sort-by="sortBy" :ready-filter="readyFilter" :affiliation-filter="affiliationFilter" :active-tab="activeTab" :chat-messages="snapshot.chatMessages" :chat-status="chatStatus" :team-mode="isTeamMode" :team-players="filteredTeamPlayers" :team-clan="ownClan" :team-count="teamCount" :clan-count="clanCount" :top-ready-clan="topReadyClan" :only-ready-clans="onlyReadyClans" :current-map="snapshot.currentMap" :next-map="snapshot.nextMap" :next-team-count="snapshot.nextTeamCountLabel" @update:query="query = $event" @update:sort="setSort" @update:ready-filter="setReadyFilter" @update:affiliation-filter="setAffiliationFilter" @reset-filter-groups="resetFilterGroups" @reset-filters="resetFilters" @filter-ready-clans="onlyReadyClans = $event" @select-player="selectPlayer" @select-tab="selectLobbyTab" @send-chat="sendChat" @send-call="sendCall" @send-join="sendJoin" @send-team-message="sendTeamMessage" />
         <ClanOverview :clan="ownClan" :ready-count="clanReadyCount" :member-count="clanPlayers.length" :members="clanPlayers.slice(0, 8)" :labels="labels" />
       </main>
     </section>`,

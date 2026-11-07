@@ -236,7 +236,7 @@ export const PlayerList = defineComponent({
           <table class="fx-custom-lobby-table">
             <thead><tr><th>#</th><th>{{ labels.players }}</th><th>{{ labels.clan }}</th><th>{{ labels.rank }}</th><th>{{ labels.status }}</th></tr></thead>
             <tbody>
-              <tr v-for="(player, index) in visiblePlayers" :key="player.id || player.name + ':' + index" :class="{ 'is-self': player.self }" :title="player.title || player.name" :style="player.color ? { '--fx-custom-player-color': player.color } : null" @click="$emit('select-player', player)">
+              <tr v-for="(player, index) in visiblePlayers" :key="player.id || player.name + ':' + index" :class="{ 'is-self': player.self }" :title="player.title || player.name" :style="player.color ? { '--fx-custom-player-color': player.color } : null" @click.stop.prevent="$emit('select-player', player, $event)">
                 <td>{{ index + 1 }}</td>
                 <td class="fx-custom-lobby-player-name"><i class="fx-custom-lobby-status-dot" :class="'is-' + player.readiness"></i>{{ player.name }}</td>
                 <td class="fx-custom-lobby-player-clan">{{ player.clan ? '[' + player.clan + ']' : '—' }}</td>
@@ -300,7 +300,7 @@ export const PlayerList = defineComponent({
           <span v-if="teamMessageStatus" role="status">{{ teamMessageStatus }}</span>
         </form>
       </section>
-      <LobbyChat v-else :labels="labels" :messages="chatMessages" :status="chatStatus" @send="sendChat" />
+      <LobbyChat v-else ref="lobbyChat" :labels="labels" :messages="chatMessages" :status="chatStatus" @send="sendChat" />
     </section>`,
   computed: {
     spawnDirections() { return [
@@ -325,6 +325,7 @@ export const PlayerList = defineComponent({
   },
   methods: {
     sendChat(message, callback) { this.$emit("send-chat", message, callback); },
+    insertMentionToken(token) { return this.$refs.lobbyChat?.insertMentionToken(token) ?? false; },
     sendTeamMessage() {
       const message = this.teamMessage.trim();
       if (!message || !this.teamClan) return;
@@ -394,6 +395,18 @@ export const LobbyChat = defineComponent({
       this.senderMenu = null;
       this.$nextTick(() => this.$refs.chatInput?.focus());
     },
+    insertMentionToken(token) {
+      const accountId = String(token ?? "").trim();
+      if (!/^[A-Za-z0-9_-]{5}$/.test(accountId)) return false;
+      const mention = `@${accountId}`;
+      this.message = `${this.message}${this.message && !/\s$/.test(this.message) ? " " : ""}${mention} `;
+      this.$nextTick(() => this.$refs.chatInput?.focus());
+      return true;
+    },
+    clearDraft() {
+      this.message = "";
+      this.$nextTick(() => this.$refs.chatInput?.focus());
+    },
     submit() {
       const message = this.message.trim();
       if (message) this.$emit("send", message, sent => { if (sent) this.message = ""; });
@@ -417,6 +430,7 @@ export const LobbyChat = defineComponent({
       <span class="fx-custom-lobby-chat-command-hint">/diag · /help</span>
       <form class="fx-custom-lobby-chat-compose" @submit.stop.prevent="submit">
         <input ref="chatInput" v-model="message" type="text" :placeholder="labels.chatPlaceholder" :aria-label="labels.chatPlaceholder" @keydown.stop @keyup.stop @keypress.stop>
+        <button type="button" class="fx-custom-lobby-chat-clear" :disabled="!message" :aria-label="labels.clear" :title="labels.clear" @click="clearDraft">×</button>
         <button type="submit">{{ labels.send }}</button>
       </form>
     </section>`,

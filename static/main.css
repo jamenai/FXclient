@@ -2428,7 +2428,7 @@ body[data-fx-bot-protection="active"] #fx-sidebar {
 
 .fx-custom-lobby-chat-compose {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto;
+	grid-template-columns: minmax(0, 1fr) auto auto;
 	align-items: center;
 	gap: 8px;
 }
@@ -2446,6 +2446,21 @@ body[data-fx-bot-protection="active"] #fx-sidebar {
 .fx-custom-lobby-chat-compose button,
 .fx-custom-lobby-actions button {
 	padding: 9px 12px;
+}
+
+.fx-custom-lobby-chat-compose .fx-custom-lobby-chat-clear {
+	width: 36px;
+	padding: 6px;
+	border-color: rgba(158, 194, 229, .2);
+	background: rgba(20, 39, 58, .55);
+	color: #b4c7d8;
+	font-size: 1.2em;
+	line-height: 1;
+}
+
+.fx-custom-lobby-chat-compose .fx-custom-lobby-chat-clear:disabled {
+	opacity: .45;
+	cursor: default;
 }
 
 .fx-custom-lobby-actions {

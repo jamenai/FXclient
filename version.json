@@ -1,9 +1,9 @@
 {
-    "version": "0.1.8",
+    "version": "0.1.9",
     "lastUpdated": "November 7",
     "changes": [
-        "Keep the custom lobby active when returning from a match",
-        "Prevent duplicate lobby chat entries and add account ID mentions from chat names"
+        "Enable the new Vue sidebar, home screen, and alternative lobby view by default",
+        "Add player context menus with account mentions and a chat input reset button"
     ],
     "isSignificant": true
 }
