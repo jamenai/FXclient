@@ -55,6 +55,15 @@
 	z-index         : 10;
 }
 
+#updateNotification {
+	top: 16px !important;
+	right: 16px !important;
+	left: auto !important;
+	width: min(520px, calc(100vw - 32px)) !important;
+	margin: 0 !important;
+	z-index: 2147483646 !important;
+}
+
 body:has(#fx-custom-lobby-view) .window {
 	z-index: 10000;
 }
