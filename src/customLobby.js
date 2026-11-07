@@ -6,25 +6,13 @@ const socketURL = "wss://fx-lobbies.peshomir.workers.dev/";
 const customMessageMarker = 120;
 let isActive = false;
 let currentCode = "";
+let currentRegion = "default";
 let joinLobby = () => { };
 /** when `leaveLobby` is called, the modified code will also execute setActive(false) */
 let leaveLobby = () => { };
 let sendRaw = (socketId, data) => { };
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
-
-WindowManager.add({
-    name: "lobbyJoinMenu",
-    element: document.getElementById("customLobbyJoinMenu")
-})
-
-if (customLobbiesUnavailable) {
-    const window = WindowManager.create({
-        name: "customLobbiesUnavailable",
-        closeWithButton: true
-    });
-    window.innerHTML =  `<p>The latest version of ZFX Client doesn't support custom lobbies yet. Use the stable version at <a href="https://jamenai.github.io/FXclient/">https://jamenai.github.io/FXclient/</a></p>`;
-}
 
 const windowElement = WindowManager.create({
     name: "customLobby",
@@ -170,24 +158,23 @@ function setSelectMenuOptions(options, element) {
 }
 
 function showJoinPrompt() {
-    if (customLobbiesUnavailable)
-        return WindowManager.openWindow("customLobbiesUnavailable");
-    WindowManager.openWindow("lobbyJoinMenu");
+    window.dispatchEvent(new CustomEvent("fx-show-custom-lobby-join", { detail: { unavailable: customLobbiesUnavailable } }));
 }
-document.getElementById("lobbyCode").addEventListener("input", ({ target: input }) => {
-    if (input.value.length !== 5) return;
-    currentCode = input.value.toLowerCase();
-    input.value = "";
-    WindowManager.closeWindow("lobbyJoinMenu");
+function joinWithCode(code) {
+    const normalizedCode = String(code || "").trim().toLowerCase();
+    if (normalizedCode.length !== 5) return false;
+    currentCode = normalizedCode;
     setActive(true)
     joinLobby();
-});
-document.getElementById("createLobbyButton").addEventListener("click", () => {
+    return true;
+}
+function createLobby(region = "default") {
     currentCode = "";
-    WindowManager.closeWindow("lobbyJoinMenu");
+    currentRegion = String(region || "default");
     setActive(true)
     joinLobby();
-});
+    return true;
+}
 
 function sendMessage(type, data) {
     const message = data !== undefined ? { t: type, d: data } : { t: type }
@@ -304,8 +291,7 @@ function updatePlayerCount() {
 
 function getSocketURL() {
     if (currentCode !== "") return socketURL + "join?" + currentCode
-    const region = document.getElementById("customLobbyRegion").value
-    return socketURL + "create" + (region === "default" ? "" : `?location=${region}`)
+    return socketURL + "create" + (currentRegion === "default" ? "" : `?location=${encodeURIComponent(currentRegion)}`)
 }
 function getPlayerId() {
     let id = 0;
@@ -355,7 +341,7 @@ function setActive(active) {
 function hideWindow() {
     WindowManager.closeWindow("customLobby");
 }
-const gameInterface = { gameInfo: optionsValues, showJoinPrompt, isCustomMessage, getSocketURL, getPlayerId, setJoinFunction, setLeaveFunction, setSendFunction, setMapInfo, rejoinLobby, hideWindow, isActive: () => isActive, setActive }
+const gameInterface = { gameInfo: optionsValues, showJoinPrompt, joinWithCode, createLobby, isCustomMessage, getSocketURL, getPlayerId, setJoinFunction, setLeaveFunction, setSendFunction, setMapInfo, rejoinLobby, hideWindow, isActive: () => isActive, setActive }
 
 const customLobby = gameInterface
 export default customLobby

@@ -1,12 +1,45 @@
 {
-    "version": "0.1.14",
+    "version": "0.1.15",
     "lastUpdated": "November 7, 2026",
     "changes": [
-        "Restyle the What's New dialog to match the client views",
-        "Move the What's New dialog to the Vue view system",
-        "Show propaganda messages in a Vue top-layer dialog with their original colors",
-        "Recover existing native propaganda popups into the Vue dialog",
-        "Improve lobby return routing and notification initialization"
+        "Add ZFX branding, a custom favicon, and updated project links",
+        "Replace the custom lobby dialog with a dedicated Vue view",
+        "Align Game and ZFX Settings dialogs and stabilize their shared header and navigation",
+        "Show implementation status for HomeView scenario, account, game menu, and custom lobby actions"
     ],
-    "isSignificant": true
+    "isSignificant": true,
+    "history": [
+        {
+            "version": "0.1.14",
+            "lastUpdated": "November 7, 2026",
+            "changes": [
+                "Restyle the What's New dialog to match the client views"
+            ]
+        },
+        {
+            "version": "0.1.13",
+            "lastUpdated": "November 7, 2026",
+            "changes": [
+                "Move the What's New dialog to the Vue view system"
+            ]
+        },
+        {
+            "version": "0.1.12",
+            "lastUpdated": "November 7, 2026",
+            "changes": [
+                "Show propaganda messages in a Vue top-layer dialog with their original colors",
+                "Recover existing native propaganda popups into the Vue dialog",
+                "Improve lobby return routing and notification initialization"
+            ]
+        },
+        {
+            "version": "0.1.11",
+            "lastUpdated": "November 7, 2026",
+            "changes": [
+                "Persist map previews for upcoming games in browser storage",
+                "Align icons in the compact sidebar",
+                "Improve lobby notifications and next-game details"
+            ]
+        }
+    ]
 }

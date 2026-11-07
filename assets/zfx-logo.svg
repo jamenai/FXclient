@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 100" role="img" aria-labelledby="title">
+  <title id="title">ZFX Client</title>
+  <defs><clipPath id="tile"><rect x="2" y="2" width="96" height="96" rx="17"/></clipPath></defs>
+  <g clip-path="url(#tile)">
+    <path fill="#0b2637" d="M0 0h100v100H0z"/>
+    <path fill="#15546d" d="M0 0h44c-9 9 8 12-3 22-9 8 8 14 1 23-7 8 13 15 8 23-6 10-33 8-50 22z"/>
+    <path fill="#16835f" d="M44 0h56v49c-17 1-29 5-44 5 2-8-12-13-8-21 5-10-10-13-2-21 7-7-9-10-2-12z"/>
+    <path fill="#147c78" d="M0 75c16-11 42-8 50-18 16-7 30-8 50-9v52H0z"/>
+    <path d="M44-3c-10 8 8 13-3 23-9 9 8 13 1 23-7 9 13 15 8 23M-4 77c17-12 43-9 52-20 16-7 31-8 56-10" fill="none" stroke="#f2f5ee" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M46 0c-6 7 7 12-2 19-7 9 6 13 1 21M0 73c17-9 37-7 47-17 14-6 30-7 53-9" fill="none" stroke="#fff" stroke-opacity=".62" stroke-width="1.2" stroke-linecap="round"/>
+  </g>
+  <text x="116" y="61" fill="#eaf5fc" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="39" font-weight="750" letter-spacing="-1">ZFX Client</text>
+  <text x="119" y="83" fill="#91adbf" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="600" letter-spacing="3">TERRITORIAL.IO</text>
+</svg>

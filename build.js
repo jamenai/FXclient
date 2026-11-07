@@ -97,6 +97,9 @@ async function patchGameCode(buildTimestamp) {
 	if (stringArrayRaw === undefined) throw new Error("cannot find the string array");
 	const stringArray = JSON.parse(stringArrayRaw);
 	script = script.replace(/\bS\[(\d+)\]/g, (_match, index) => `"${stringArray[index]}"`);
+	const nativeLogoRenderer = /(function aJ6\(eI,aJ5\)\{[\s\S]*?canvas\[eI\]=bD\.or\.a63\(canvas\[eI\],a64,a65\);)/;
+	if (!nativeLogoRenderer.test(script)) throw new Error("Could not locate the native logo renderer.");
+	script = script.replace(nativeLogoRenderer, "$&if(eI===6||eI===22){var blank=document.createElement('canvas');blank.width=canvas[eI].width;blank.height=canvas[eI].height;canvas[eI]=blank;}");
 
 	const modUtils = new ModUtils(minifyCode(script));
 

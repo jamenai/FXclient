@@ -1,7 +1,9 @@
 import { computed, createApp, defineComponent, onBeforeUnmount, onMounted, ref } from "vue/dist/vue.esm-bundler.js";
+import { ZfxLogoMark } from "./zfxLogoMark.js";
 
 const ReplayView = defineComponent({
   name: "FxReplayView",
+  components: { ZfxLogoMark },
   setup() {
     const visible = ref(false);
     const replayText = ref("");
@@ -79,7 +81,7 @@ const ReplayView = defineComponent({
     <div v-show="visible" class="fx-replay-overlay" @pointerdown.self="close">
       <main class="fx-replay-view" role="dialog" aria-modal="true" aria-labelledby="fx-replay-title">
         <header class="fx-replay-header">
-          <div class="fx-replay-brand-mark" aria-hidden="true"><span>Z</span></div>
+          <ZfxLogoMark class="fx-replay-brand-mark" aria-hidden="true" />
           <div><small>ZFX CLIENT · REPLAY</small><h1 id="fx-replay-title">{{ labels.title }}</h1><p>{{ labels.subtitle }}</p></div>
           <button type="button" class="fx-replay-close" :aria-label="labels.close" @click="close">×</button>
         </header>

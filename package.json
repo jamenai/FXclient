@@ -15,14 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jamenai/FXclient.git"
+    "url": "git+https://github.com/jamenai/ZFXclient.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/jamenai/FXclient/issues"
+    "url": "https://github.com/jamenai/ZFXclient/issues"
   },
-  "homepage": "https://github.com/jamenai/FXclient#readme",
+  "homepage": "https://jamenai.github.io/ZFXclient/",
   "dependencies": {
     "core-js": "^3.44.0",
     "js-beautify": "^1.14.11",

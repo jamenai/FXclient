@@ -11,10 +11,10 @@ const VueSettingsView = defineComponent({
     const activeSettingsTab = ref("");
     const isGerman = ref(false);
     const labels = computed(() => isGerman.value ? {
-      title: "Einstellungen", close: "Schlie\u00dfen", sections: "Einstellungsbereiche",
+      title: "Einstellungen", subtitle: "ZFX-Client-Optionen und Benutzeroberfläche.", close: "Schlie\u00dfen", sections: "Einstellungsbereiche", clientSettings: "ZFX-Einstellungen", gameSettings: "Spieleinstellungen",
       footer: { "Reset Settings": "Einstellungen zur\u00fccksetzen", "Save Settings": "Einstellungen speichern", Import: "Importieren", Export: "Exportieren", Reset: "Zur\u00fccksetzen", Save: "Speichern" },
     } : {
-      title: "Settings", close: "Close", sections: "Settings sections",
+      title: "Settings", subtitle: "ZFX client options and interface preferences.", close: "Close", sections: "Settings sections", clientSettings: "ZFX Settings", gameSettings: "Game Settings",
       footer: { "Einstellungen zur\u00fccksetzen": "Reset Settings", "Einstellungen speichern": "Save Settings", Importieren: "Import", Exportieren: "Export", Zur\u00fccksetzen: "Reset", Speichern: "Save" },
     });
     const sectionTranslations = {
@@ -64,6 +64,10 @@ const VueSettingsView = defineComponent({
     };
 
     const close = () => { visible.value = false; };
+    const openGameSettings = () => {
+      close();
+      window.__fx?.openVueGameSettings?.();
+    };
     const selectSettingsTab = tab => {
       activeSettingsTab.value = tab.id;
       for (const item of settingsTabs.value) item.panel.hidden = item.id !== tab.id;
@@ -181,13 +185,18 @@ const VueSettingsView = defineComponent({
       if (window.__fx?.closeVueSettings === close) delete window.__fx.closeVueSettings;
     });
 
-    return { visible, settingsContent, settingsActions, settingsTabs, activeSettingsTab, selectSettingsTab, translateSection, labels, close };
+    return { visible, settingsContent, settingsActions, settingsTabs, activeSettingsTab, selectSettingsTab, translateSection, labels, close, openGameSettings };
   },
   template: `
     <div v-show="visible" class="fx-settings-overlay" @pointerdown.self="close">
       <section class="fx-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="fx-settings-title">
         <header class="fx-settings-header">
-          <div><small>ZFX CLIENT</small><h1 id="fx-settings-title">{{ labels.title }}</h1></div>
+          <div class="fx-settings-mark" aria-hidden="true">⚙</div>
+          <div class="fx-settings-heading"><small>ZFX CLIENT · SETTINGS</small><h1 id="fx-settings-title">{{ labels.title }}</h1><p>{{ labels.subtitle }}</p></div>
+          <nav class="fx-settings-kind-switch" :aria-label="labels.sections">
+            <button type="button" class="is-active" aria-current="page">{{ labels.clientSettings }}</button>
+            <button type="button" @click="openGameSettings">{{ labels.gameSettings }}</button>
+          </nav>
           <button type="button" class="fx-settings-close" :aria-label="labels.close" @click="close">×</button>
         </header>
         <div class="fx-settings-body">

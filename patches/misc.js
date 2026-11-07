@@ -26,7 +26,7 @@ export default definePatch(({ insertCode, modifyCode, replaceCode, replaceRawCod
   modifyCode(`4, 1, new g(__L(), b.c + "<br>" + d.e.f("/changelog")
     ${insert(` + "<br><br><b>" + "ZFX Client v" + __fx.version
       + "<br><a href='https://discord.gg/Hzqm6NSRp' target='_blank'>ZFX Client Discord server</a>"
-      + "<br><a href='https://github.com/jamenai/FXclient' target='_blank'>Github repository</a></b>"`)} /*...*/)`)
+      + "<br><a href='https://github.com/jamenai/ZFXclient' target='_blank'>Github repository</a></b>"`)} /*...*/)`)
   
   // Hide propaganda popup
   // The native propaganda dialog is appended directly to body; put its backdrop
@@ -110,7 +110,7 @@ export default definePatch(({ insertCode, modifyCode, replaceCode, replaceRawCod
   // for the custom lobby version
   try {
     modifyCode(`new a("⚔️<br>" + __L(), function() {
-      ${insert(`if (__fx.isCustomLobbyVersion) alert("This version is for use with custom lobbies only. For normal multiplayer, use the version at https://jamenai.github.io/FXclient/")
+      ${insert(`if (__fx.isCustomLobbyVersion) alert("This version is for use with custom lobbies only. For normal multiplayer, use the version at https://jamenai.github.io/ZFXclient/")
       else`)} b(0);
 		}, ${insert(`__fx.isCustomLobbyVersion ? "rgba(50, 50, 50, 0.6)" : `)} c.d)`)
   } catch (error) {

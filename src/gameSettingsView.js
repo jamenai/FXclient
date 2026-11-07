@@ -25,6 +25,7 @@ const GameSettingsView = defineComponent({
       const native = snapshot.value?.labels || {};
       return isGerman.value ? {
         title: "Spieleinstellungen", subtitle: "Spieloptionen in der ZFX-Ansicht.", close: "Schließen",
+        clientSettings: "ZFX-Einstellungen", gameSettings: "Spieleinstellungen",
         language: "Sprache", display: "Anzeige", select: "Auswählen", fontPlaceholder: "Schriftart eingeben",
         messageKeepClosed: native.keepClosed || "Geschlossen halten", messageMuted: native.muted || "Stummgeschaltet",
         keyHint: "Taste anklicken und neue Tastenkombination drücken", resetKeys: "Tastenkürzel zurücksetzen",
@@ -32,6 +33,7 @@ const GameSettingsView = defineComponent({
         intensity: native.intensity || "Intensität", live: "Änderungen werden direkt im Spiel übernommen.",
       } : {
         title: "Game Settings", subtitle: "Game options in the ZFX interface.", close: "Close",
+        clientSettings: "ZFX Settings", gameSettings: "Game Settings",
         language: "Language", display: "Display", select: "Select", fontPlaceholder: "Enter font name",
         messageKeepClosed: native.keepClosed || "Keep Closed", messageMuted: native.muted || "Is Muted",
         keyHint: "Click a key field and press a new key", resetKeys: "Reset shortcuts",
@@ -82,6 +84,7 @@ const GameSettingsView = defineComponent({
       visible.value = true;
     }
     function close() { keyCaptureIndex.value = -1; visible.value = false; }
+    function openClientSettings() { close(); window.__fx?.openVueSettings?.(); }
     function onKeyDown(event) {
       if (visible.value && event.key === "Escape" && keyCaptureIndex.value < 0) close();
     }
@@ -99,7 +102,7 @@ const GameSettingsView = defineComponent({
       if (window.__fx?.closeVueGameSettings === close) delete window.__fx.closeVueGameSettings;
     });
     return { visible, sections, selectedSection, snapshot, labels, nativeLabels, gameOptions, keyGroups, keyCaptureIndex,
-      isGerman, setField, setConnection, captureKey, resetShortcuts, resetAll, close };
+      isGerman, setField, setConnection, captureKey, resetShortcuts, resetAll, close, openClientSettings };
   },
   template: `
     <div v-show="visible" class="fx-game-settings-overlay" @pointerdown.self="close">
@@ -107,6 +110,10 @@ const GameSettingsView = defineComponent({
         <header class="fx-game-settings-header">
           <div class="fx-game-settings-mark" aria-hidden="true">⚙</div>
           <div><small>ZFX CLIENT · GAME</small><h1 id="fx-game-settings-title">{{ labels.title }}</h1><p>{{ labels.subtitle }}</p></div>
+          <nav class="fx-settings-kind-switch" :aria-label="labels.title">
+            <button type="button" @click="openClientSettings">{{ labels.clientSettings }}</button>
+            <button type="button" class="is-active" aria-current="page">{{ labels.gameSettings }}</button>
+          </nav>
           <button type="button" class="fx-game-settings-close" :aria-label="labels.close" @click="close">×</button>
         </header>
         <div v-if="snapshot" class="fx-game-settings-layout">

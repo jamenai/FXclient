@@ -25,7 +25,14 @@ const ChangelogView = defineComponent({
     window.addEventListener("fx-show-changelog", handleShow);
     onBeforeUnmount(() => window.removeEventListener("fx-show-changelog", handleShow));
 
-    return { dialog, dismiss, changes: versionData.changes ?? [], version: versionData.version, lastUpdated: versionData.lastUpdated };
+    return {
+      dialog,
+      dismiss,
+      changes: versionData.changes ?? [],
+      history: versionData.history ?? [],
+      version: versionData.version,
+      lastUpdated: versionData.lastUpdated,
+    };
   },
   template: `
     <Teleport to="body">
@@ -35,7 +42,14 @@ const ChangelogView = defineComponent({
           <span class="fx-changelog-eyebrow">ZFX CLIENT · RELEASE NOTES</span>
           <h2 id="fx-changelog-title">What's new in {{ version }}</h2>
           <p class="fx-changelog-date">{{ lastUpdated }}</p>
-          <ul><li v-for="(change, index) in changes" :key="index">{{ change }}</li></ul>
+          <ul class="fx-changelog-current-list"><li v-for="(change, index) in changes" :key="index">{{ change }}</li></ul>
+          <section v-if="history.length" class="fx-changelog-history" aria-label="Previous release notes">
+            <h3>Previous versions</h3>
+            <details v-for="release in history" :key="release.version">
+              <summary>Version {{ release.version }} <span>{{ release.lastUpdated }}</span></summary>
+              <ul><li v-for="(change, index) in release.changes" :key="index">{{ change }}</li></ul>
+            </details>
+          </section>
           <div class="fx-changelog-actions"><button type="button" @click="dismiss">Close</button></div>
         </div>
       </dialog>

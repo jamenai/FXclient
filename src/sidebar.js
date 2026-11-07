@@ -211,7 +211,6 @@ function createLegacySidebar() {
     ["📜", "sidebarLogs", () => window.__fx?.openVueLogs?.()],
   ]);
   appendSection("sidebarAccountGroup", [
-    ["⚙", "sidebarGameSettings", () => window.__fx?.openVueGameSettings?.()],
     ["settings", "sidebarSettings", () => typeof window.__fx?.openVueSettings === "function"
       ? window.__fx.openVueSettings() : window.__fx?.WindowManager?.openWindow("settings")],
     ["🔑", "sidebarAccount", () => window.__fx?.openAccount?.()],

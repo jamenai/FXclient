@@ -178,7 +178,7 @@ const fxText = {
     showSidebar: "Show ZFX Client sidebar",
     vueSidebar: "Use the new Vue sidebar",
     vueSidebarNote: "Use the redesigned sidebar interface throughout the game.",
-    sidebarSettings: "ZFX Settings",
+    sidebarSettings: "Settings",
     sidebarHome: "Home",
     sidebarGeneralGroup: "General",
     sidebarAccountGroup: "Account",
@@ -284,7 +284,7 @@ const fxText = {
     showSidebar: "ZFX-Client-Seitenleiste anzeigen",
     vueSidebar: "Neue Vue-Seitenleiste verwenden",
     vueSidebarNote: "Verwendet die neu gestaltete Seitenleiste im gesamten Spiel.",
-    sidebarSettings: "ZFX-Einstellungen",
+    sidebarSettings: "Einstellungen",
     sidebarHome: "Startseite",
     sidebarGeneralGroup: "Generelles",
     sidebarAccountGroup: "Account",
@@ -695,7 +695,7 @@ const settingsManager = new (function () {
       versionInfo.innerText = `ZFX Client v${versionData.version}`;
       const links = document.createElement("p");
       links.innerHTML = `<a href="https://discord.gg/Hzqm6NSRp" target="_blank">ZFX Client Discord</a> |
-        <a href="https://github.com/jamenai/FXclient#readme">Github repository</a>`;
+        <a href="https://github.com/jamenai/ZFXclient#readme">Github repository</a>`;
       bindSettingsText("ZFX Client Discord", value => { links.querySelector("a")?.replaceChildren(value); });
       bindSettingsText("Github repository", value => { links.querySelectorAll("a")[1]?.replaceChildren(value); });
       const changelogButton = document.createElement("button");

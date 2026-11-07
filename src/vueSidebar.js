@@ -1,4 +1,5 @@
 import { computed, createApp, defineComponent, onBeforeUnmount, onMounted, ref } from "vue/dist/vue.esm-bundler.js";
+import { ZfxLogoMark } from "./zfxLogoMark.js";
 import versionData from "../version.json";
 
 const STORAGE_KEY = "fx_sidebar_collapsed";
@@ -34,6 +35,7 @@ function rankToRating(rank) {
 
 const VueSidebar = defineComponent({
   name: "FxVueSidebar",
+  components: { ZfxLogoMark },
   setup() {
     const mode = ref(localStorage.getItem(STORAGE_KEY) || (window.innerWidth < 900 ? "collapsed" : "expanded"));
     const enabled = ref(window.__fx?.settings?.showSidebar !== false);
@@ -78,7 +80,6 @@ const VueSidebar = defineComponent({
         { icon: "▤", label: t("sidebarLogs"), action: () => window.__fx?.openVueLogs?.() },
       ] },
       { title: t("sidebarAccountGroup"), items: [
-        { icon: "⚙", label: t("sidebarGameSettings"), action: () => window.__fx?.openVueGameSettings?.() },
         { icon: "⚙", label: t("sidebarSettings"), action: () => window.__fx?.openVueSettings?.() },
         { icon: "account", label: t("sidebarAccount"), action: () => window.__fx?.openVueMyAccount?.() },
         { icon: "◆", label: t("sidebarGoldTransfer"), action: openNativeAction(() => window.__fx?.openGameMenuAction?.("goldTransfer")) },
@@ -158,7 +159,7 @@ const VueSidebar = defineComponent({
   template: `
     <aside id="fx-sidebar" ref="root" class="fx-vue-sidebar" :class="{'is-collapsed': isCollapsed, 'is-expanded': mode === 'expanded'}"
       :hidden="!enabled || mode === 'hidden'" :style="{width: width + 'px'}" :aria-label="t('sidebarSettings')">
-      <header class="fx-vue-sidebar-brand"><span class="fx-vue-sidebar-crown">♛</span><div><strong>ZULUS ZFX</strong><small>Territorial.io Enhanced</small></div></header>
+      <header class="fx-vue-sidebar-brand"><ZfxLogoMark class="fx-vue-sidebar-logo" aria-hidden="true"/><div><strong>ZFX Client</strong><small>Territorial.io</small></div></header>
       <div ref="clockSlot" class="fx-sidebar-clock"></div>
       <button type="button" class="fx-vue-sidebar-profile" :title="t('sidebarEditPlayerName')" :aria-label="t('sidebarEditPlayerName')" @click="openPlayerNameView">
         <div class="fx-vue-sidebar-avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></div>

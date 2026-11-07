@@ -7,13 +7,14 @@
     "description": "Client for Territorial.io",
     "icons": [
         {
-            "src": "favicon.ico",
-            "sizes": "64x64"
+            "src": "favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
         },
         {
-            "src": "assets/logo.png",
+            "src": "assets/zfx-logo.svg",
             "sizes": "any",
-            "type": "image/png"
+            "type": "image/svg+xml"
         }
     ]
 }

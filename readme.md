@@ -1,24 +1,23 @@
 <p align="center">
-  <a href="https://jamenai.github.io/FXclient/">
+  <a href="https://jamenai.github.io/ZFXclient/">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="/assets/logo_text_dark.png">
-      <source media="(prefers-color-scheme: light)" srcset="/assets/logo_text_light.png">
-      <img src="/assets/logo_text_light.png" width="20%">
+      <img src="assets/zfx-logo.svg" width="320" alt="ZFX Client">
     </picture>
   </a>
 </p>
 <p align="center">
+  <a href="https://github.com/jamenai/ZFXclient"><img alt="GitHub repository" src="https://img.shields.io/badge/GitHub-ZFXclient-172b3a?logo=github&logoColor=white"></a>
   <a href="https://discord.gg/Hzqm6NSRp"><img alt="ZFX Client Discord" src="https://img.shields.io/badge/Discord-ZFX%20Client-5865F2?logo=discord&logoColor=white"></a>
-  <a href="https://github.com/jamenai/FXclient/actions/workflows/deploy_github_pages.yml"><img src="https://github.com/jamenai/FXclient/actions/workflows/deploy_github_pages.yml/badge.svg" alt="Build and Publish to GitHub Pages"></a>
-  <a href="https://jamenai.github.io/FXclient/"><img src="https://github.com/jamenai/FXclient/actions/workflows/pages/pages-build-deployment/badge.svg" alt="pages-build-deployment"></a>
+  <a href="https://github.com/jamenai/ZFXclient/actions/workflows/deploy_github_pages.yml"><img src="https://github.com/jamenai/ZFXclient/actions/workflows/deploy_github_pages.yml/badge.svg" alt="Build and Publish to GitHub Pages"></a>
+  <a href="https://jamenai.github.io/ZFXclient/"><img src="https://github.com/jamenai/ZFXclient/actions/workflows/pages/pages-build-deployment/badge.svg" alt="pages-build-deployment"></a>
 </p>
 
 ## ZFX Client
-ZFX Client is an independently maintained fork of the original FX Client for Territorial.io. It keeps the core features and adds its own lobby, player-list, and in-game improvements.
+ZFX Client is an independently maintained client for Territorial.io, based on the original FX Client. It keeps the core features and adds its own lobby, player-list, and in-game improvements.
 
-**Use the latest ZFX Client here: https://jamenai.github.io/FXclient/**
+**Use the latest ZFX Client here: https://jamenai.github.io/ZFXclient/**
 
-### Zulus-specific features
+### ZFX Client features
 1. A compact lobby layout with filters for readiness, followed players, and clan members
 2. Player-list sorting by rank or followed status
 3. Highlights for duplicate IP addresses and players from your clan

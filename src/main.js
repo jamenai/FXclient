@@ -4,6 +4,7 @@ const { version, lastUpdated, isSignificant } = versionData;
 import settingsManager from './settings.js';
 import { initializeLobbyEnhancements } from "./lobbyEnhancements.js";
 import { initializeCustomLobbyView } from "./customLobbyView.js";
+import { initializeCustomLobbyJoinView } from "./customLobbyJoinView.js";
 import { clanFilter, leaderboardFilter } from "./clanFilters.js";
 import WindowManager from "./windowManager.js";
 import donationsTracker from "./donationsTracker.js";
@@ -82,6 +83,7 @@ if (savedVersion !== version && !fxBridge.isCustomLobbyVersion) {
 initializeLobbyEnhancements();
 initializeUpdatePromptView();
 initializeCustomLobbyView();
+initializeCustomLobbyJoinView();
 createVueSettingsView(settingsManager);
 createVueHomeView();
 createVueReplayView();

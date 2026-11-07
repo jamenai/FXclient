@@ -1,7 +1,9 @@
 import { createApp, computed, defineComponent, onBeforeUnmount, onMounted, ref } from "vue/dist/vue.esm-bundler.js";
+import { ZfxLogoMark } from "./zfxLogoMark.js";
 
 const FxHomeView = defineComponent({
   name: "FxHomeView",
+  components: { ZfxLogoMark },
   setup() {
     const visible = ref(false);
     const nameEditorOpen = ref(false);
@@ -16,8 +18,8 @@ const FxHomeView = defineComponent({
     const labels = computed(() => isGerman.value ? {
       accountId: "Account-ID",
       eyebrow: "DEIN SPIEL. DEIN CLIENT.", subtitle: "Dein Territorial.io-Spielbereich",
-      multiplayer: "Mehrspieler", scenario: "Szenario", account: "Konto", menu: "Spielmenü",
-      settings: "ZFX Client Einstellungen", customLobby: "Custom-Lobby beitreten oder erstellen",
+      multiplayer: "Mehrspieler", scenario: "Szenario", scenarioNote: "Noch nicht vollständig implementiert", menuNote: "(nativ)", accountNote: "(WIP)", account: "Konto", menu: "Spielmenü",
+      settings: "Einstellungen", customLobby: "Custom-Lobby beitreten oder erstellen", customLobbyNote: "Noch nicht vollständig implementiert",
       online: "Startklar", player: "Spielerprofil", changeName: "Namen ändern", nameTitle: "Spielername ändern",
       nameNote: "Bis zu 20 Zeichen. Clan-Tags wie [TAG] kannst du im Namen mit angeben.", save: "Speichern", cancel: "Zurück",
       nameReconnect: "Name gespeichert. Lobby wird neu verbunden …",
@@ -26,8 +28,8 @@ const FxHomeView = defineComponent({
     } : {
       accountId: "Account ID",
       eyebrow: "YOUR GAME. YOUR CLIENT.", subtitle: "Your Territorial.io home",
-      multiplayer: "Multiplayer", scenario: "Custom scenario", account: "My account", menu: "Game menu",
-      settings: "ZFX Client settings", customLobby: "Join or create a custom lobby",
+      multiplayer: "Multiplayer", scenario: "Custom scenario", scenarioNote: "Not fully implemented", menuNote: "(native)", accountNote: "(WIP)", account: "My account", menu: "Game menu",
+      settings: "Settings", customLobby: "Join or create a custom lobby", customLobbyNote: "Not fully implemented",
       online: "Ready to play", player: "Player profile", changeName: "Change name", nameTitle: "Change player name",
       nameNote: "Up to 20 characters. You can include clan tags like [TAG] in your name.", save: "Save name", cancel: "Back",
       nameReconnect: "Name saved. Reconnecting to the lobby …",
@@ -35,6 +37,21 @@ const FxHomeView = defineComponent({
       nameMissing: "The game's name field is not available right now.", nameEmpty: "Enter a name first.",
     });
     let timer = 0;
+    const nativeHomeButtonVisibility = new WeakMap();
+    const nativeNameInputVisibility = new WeakMap();
+
+    function setNativeHomeButtonsHidden(hidden) {
+      for (const button of window.__fx?.nativeHomeMenuButtons || []) {
+        if (!button) continue;
+        if (!nativeHomeButtonVisibility.has(button)) nativeHomeButtonVisibility.set(button, button.style.visibility);
+        button.style.visibility = hidden ? "hidden" : nativeHomeButtonVisibility.get(button);
+      }
+      const nameInput = window.__fx?.getNativeHomeNameInput?.();
+      if (nameInput) {
+        if (!nativeNameInputVisibility.has(nameInput)) nativeNameInputVisibility.set(nameInput, nameInput.style.visibility);
+        nameInput.style.visibility = hidden ? "hidden" : nativeNameInputVisibility.get(nameInput);
+      }
+    }
 
     function refresh() {
       const game = window.__fx;
@@ -52,6 +69,7 @@ const FxHomeView = defineComponent({
       catch { clan.value = tag?.[1]?.toUpperCase() || ""; }
       const onHomeScreen = Number(game?.nativeMenuState) === 5 && Number(game?.getGameVar?.("gameState")) !== 1;
       visible.value = game?.settings?.customHomeView !== false && onHomeScreen;
+      setNativeHomeButtonsHidden(visible.value);
     }
 
     function openNameEditor() {
@@ -115,6 +133,7 @@ const FxHomeView = defineComponent({
     });
     onBeforeUnmount(() => {
       if (timer) window.clearInterval(timer);
+      setNativeHomeButtonsHidden(false);
       window.removeEventListener("fx-native-menu-state-change", refresh);
       if (window.__fx?.openPlayerNameView === openNameEditor) delete window.__fx.openPlayerNameView;
     });
@@ -131,7 +150,7 @@ const FxHomeView = defineComponent({
       <div class="fx-home-orb fx-home-orb-one"></div><div class="fx-home-orb fx-home-orb-two"></div>
       <section class="fx-home-shell">
         <header class="fx-home-header">
-          <div class="fx-home-brand-mark" aria-hidden="true"><span>Z</span></div>
+          <ZfxLogoMark class="fx-home-brand-mark" aria-hidden="true" />
           <div class="fx-home-brand-copy"><small>ZFX CLIENT</small><h1>ZFX Client</h1><p>{{ labels.subtitle }}</p></div>
           <button type="button" class="fx-home-profile" :aria-label="labels.changeName" @click="openNameEditor">
             <span class="fx-home-profile-avatar">{{ (profileName || 'Z').slice(0, 1).toUpperCase() }}</span>
@@ -146,13 +165,13 @@ const FxHomeView = defineComponent({
         </section>
         <nav class="fx-home-actions" :aria-label="isGerman ? 'Hauptmenü' : 'Main menu'">
           <button type="button" class="fx-home-action is-primary" @click="startMultiplayer"><span class="fx-home-action-icon">⚔</span><span>{{ labels.multiplayer }}</span><b>›</b></button>
-          <button type="button" class="fx-home-action is-scenario" @click="openScenario"><span class="fx-home-action-icon">✦</span><span>{{ labels.scenario }}</span><b>›</b></button>
-          <button type="button" class="fx-home-action is-account" @click="openAccount"><span class="fx-home-action-icon">◉</span><span>{{ labels.account }}</span><b>›</b></button>
-          <button type="button" class="fx-home-action is-menu" @click="openGameMenu"><span class="fx-home-action-icon">☰</span><span>{{ labels.menu }}</span><b>›</b></button>
+          <button type="button" class="fx-home-action is-scenario" @click="openScenario"><span class="fx-home-action-icon">✦</span><span class="fx-home-scenario-copy"><strong>{{ labels.scenario }}</strong><small>{{ labels.scenarioNote }}</small></span><b>›</b></button>
+          <button type="button" class="fx-home-action is-account" @click="openAccount"><span class="fx-home-action-icon">◉</span><span class="fx-home-scenario-copy"><strong>{{ labels.account }}</strong><small>{{ labels.accountNote }}</small></span><b>›</b></button>
+          <button type="button" class="fx-home-action is-menu" @click="openGameMenu"><span class="fx-home-action-icon">☰</span><span class="fx-home-scenario-copy"><strong>{{ labels.menu }}</strong><small>{{ labels.menuNote }}</small></span><b>›</b></button>
         </nav>
         <footer class="fx-home-footer">
           <button type="button" class="fx-home-secondary" @click="openSettings"><span>⚙</span>{{ labels.settings }}</button>
-          <button type="button" class="fx-home-secondary is-lobby" @click="openCustomLobby"><span>⌘</span>{{ labels.customLobby }}<b>›</b></button>
+          <button type="button" class="fx-home-secondary is-lobby" @click="openCustomLobby"><span>⌘</span><span class="fx-home-lobby-copy"><strong>{{ labels.customLobby }}</strong><small>{{ labels.customLobbyNote }}</small></span><b>›</b></button>
         </footer>
       </section>
     </main>
