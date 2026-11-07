@@ -46,6 +46,7 @@ function normalizeSnapshot(snapshot, source, previousSnapshot = EMPTY_SNAPSHOT) 
       .map((message, index) => ({
         id: String(message.id ?? index),
         text: String(message.text ?? "").trim(),
+        senderId: Number.isInteger(Number(message.senderId)) ? Number(message.senderId) : null,
         senderName: String(message.senderName ?? ""),
         senderColor: typeof message.senderColor === "string" ? message.senderColor : "",
         segments: Array.isArray(message.segments) ? message.segments.map(segment => ({

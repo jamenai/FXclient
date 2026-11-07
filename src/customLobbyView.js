@@ -308,7 +308,7 @@ const getLobbyLabels = () => {
     spawnCallHint: "Wähle einen Kartenbereich. Dein Clan erhält den Call im Lobby-Chat.", spawnDirections: "Spawn-Bereich auswählen",
     topLeft: "Oben links", top: "Oben", topRight: "Oben rechts", left: "Links", center: "Mitte", right: "Rechts", bottomLeft: "Unten links", bottom: "Unten", bottomRight: "Unten rechts",
     send: "Senden", readyAction: "Bereit",
-    chatEmpty: "Noch keine Nachrichten",
+    chatEmpty: "Noch keine Nachrichten", mention: "Erwähnen",
     playersCount: "Spieler", noClan: "Kein eigener Clan erkannt", lobbyUnavailable: "Lobby wird geladen …",
     chatUnavailable: "Lobby-Chat konnte nicht geöffnet werden",
   } : {
@@ -331,7 +331,7 @@ const getLobbyLabels = () => {
     spawnCallHint: "Choose an area of the map. Your clan will receive the call in lobby chat.", spawnDirections: "Choose spawn area",
     topLeft: "Top left", top: "Top", topRight: "Top right", left: "Left", center: "Center", right: "Right", bottomLeft: "Bottom left", bottom: "Bottom", bottomRight: "Bottom right",
     send: "Send", readyAction: "Ready",
-    chatEmpty: "No messages yet",
+    chatEmpty: "No messages yet", mention: "Mention",
     playersCount: "Players", noClan: "No own clan detected", lobbyUnavailable: "Loading lobby …",
     chatUnavailable: "Could not open lobby chat",
   };
@@ -702,6 +702,7 @@ const LobbyView = defineComponent({
             const segments = resolveLobbyChatSegments(message.s);
             return [{
             id: `room:${room.selectedIndex ?? 0}:${index}`,
+            senderId: Number.isInteger(Number(message.uY)) ? Number(message.uY) : null,
             senderName: playerName,
             senderColor: window.__fx?.getLobbyChatSenderColor?.(message.uY) || "",
             text: segments.map(segment => segment.text).join(""),
@@ -1153,6 +1154,7 @@ let nativeLobbySuppressionReturnState = null;
 let observedNativeMenu = null;
 let nativeLobbyReturnPending = false;
 let nativeLobbyReturnUntil = 0;
+let customLobbyReturnLatched = false;
 
 export function initializeCustomLobbyView() {
   migrateLobbyViewPreference();
@@ -1196,6 +1198,13 @@ export function initializeCustomLobbyView() {
       nativeLobbySuppressionRoot = null;
     }
     previousGameState = gameState;
+    if (customLobbyReturnLatched && window.__fx?.settings?.customLobbyView !== false) {
+      if (!inGame) {
+        classicSessionDisabled = false;
+        return "/lobby";
+      }
+      return "/game";
+    }
     return inGame ? "/game"
       : classicSessionDisabled || window.__fx?.settings?.customLobbyView === false ? "/classic" : "/lobby";
   };
@@ -1217,6 +1226,7 @@ export function initializeCustomLobbyView() {
     && Boolean(mount.querySelector("#fx-custom-lobby-view"));
   window.__fx.hideCustomLobbyView = () => {
     if (!window.__fx.isCustomLobbyViewVisible()) return false;
+    customLobbyReturnLatched = false;
     classicSessionDisabled = true;
     nativeLobbySuppressionRoot = findLobbyRoot(shell);
     nativeLobbySuppressionSawDeparture = false;
@@ -1227,6 +1237,7 @@ export function initializeCustomLobbyView() {
     return true;
   };
   window.__fx.showCustomLobbyView = () => {
+    customLobbyReturnLatched = false;
     classicSessionDisabled = false;
     nativeLobbySuppressionRoot = null;
     nativeLobbySuppressionSawDeparture = false;
@@ -1235,12 +1246,14 @@ export function initializeCustomLobbyView() {
   };
   window.__fx.onGameReturnedToLobby = () => {
     classicSessionDisabled = false;
+    customLobbyReturnLatched = true;
     nativeLobbyReturnPending = true;
     nativeLobbyReturnUntil = Date.now() + 6000;
     nativeLobbySuppressionRoot = null;
     nativeLobbySuppressionSawDeparture = false;
     nativeLobbySuppressionReturnState = null;
     if (window.__fx?.settings?.customLobbyView === false) {
+      customLobbyReturnLatched = false;
       nativeLobbyReturnPending = false;
       nativeLobbyReturnUntil = 0;
       return;
@@ -1337,6 +1350,7 @@ export function initializeCustomLobbyView() {
     nativeLobbySuppressionReturnState = null;
     nativeLobbyReturnPending = false;
     nativeLobbyReturnUntil = 0;
+    customLobbyReturnLatched = false;
     previousGameState = null;
   };
 }

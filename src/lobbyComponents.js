@@ -340,7 +340,7 @@ export const PlayerList = defineComponent({
 export const LobbyChat = defineComponent({
   props: { labels: Object, messages: Array, status: String },
   emits: ["send"],
-  data() { return { message: "", activationTimer: 0, activationStartedAt: 0, stickToChatBottom: true }; },
+  data() { return { message: "", activationTimer: 0, activationStartedAt: 0, stickToChatBottom: true, senderMenu: null }; },
   mounted() {
     this.activationStartedAt = Date.now();
     const tryActivate = () => {
@@ -367,6 +367,33 @@ export const LobbyChat = defineComponent({
     if (this.activationTimer) window.clearTimeout(this.activationTimer);
   },
   methods: {
+    openSenderMenu(event, entry) {
+      if (!entry?.senderName) return;
+      this.senderMenu = {
+        senderId: entry.senderId,
+        senderName: entry.senderName,
+        x: Math.max(8, Math.min(event.clientX, window.innerWidth - 176)),
+        y: Math.max(8, Math.min(event.clientY, window.innerHeight - 54)),
+      };
+    },
+    insertMention() {
+      if (!this.senderMenu) return;
+      let token = "";
+      try {
+        const accountId = Number(this.senderMenu.senderId);
+        if (Number.isInteger(accountId)) token = String(window.__fx?.getLobbyChatMentionToken?.(accountId) ?? "").trim();
+      } catch (error) {
+        console.warn("[ZFX Client LobbyChat] Could not resolve account mention ID:", error);
+      }
+      if (!token) {
+        console.warn("[ZFX Client LobbyChat] Account mention ID is not available for this sender.", this.senderMenu);
+        return;
+      }
+      const mention = `@${token}`;
+      this.message = `${this.message}${this.message && !/\s$/.test(this.message) ? " " : ""}${mention} `;
+      this.senderMenu = null;
+      this.$nextTick(() => this.$refs.chatInput?.focus());
+    },
     submit() {
       const message = this.message.trim();
       if (message) this.$emit("send", message, sent => { if (sent) this.message = ""; });
@@ -375,13 +402,21 @@ export const LobbyChat = defineComponent({
   template: `
     <section class="fx-custom-lobby-chat-view" :aria-label="labels.chat">
       <div ref="messages" class="fx-custom-lobby-chat-messages" aria-live="polite">
-        <p v-for="entry in messages" :key="entry.id"><span v-if="entry.senderName" class="fx-custom-lobby-chat-sender" :style="entry.senderColor ? { color: entry.senderColor } : null">{{ entry.senderName }}: </span><template v-if="entry.segments && entry.segments.length"><span v-for="(segment, index) in entry.segments" :key="index" :style="segment.color ? { color: segment.color } : null">{{ segment.text }}</span></template><template v-else>{{ entry.text }}</template></p>
+        <p v-for="entry in messages" :key="entry.id"><button v-if="entry.senderName" type="button" class="fx-custom-lobby-chat-sender" :style="entry.senderColor ? { color: entry.senderColor } : null" @click.stop="openSenderMenu($event, entry)">{{ entry.senderName }}:</button><template v-if="entry.segments && entry.segments.length"><span v-for="(segment, index) in entry.segments" :key="index" :style="segment.color ? { color: segment.color } : null">{{ segment.text }}</span></template><template v-else>{{ entry.text }}</template></p>
         <span v-if="!messages.length" class="fx-custom-lobby-chat-empty">{{ labels.chatEmpty }}</span>
       </div>
+      <Teleport to="body">
+        <div v-if="senderMenu" class="fx-custom-lobby-chat-menu-backdrop" @click="senderMenu = null" @keydown.esc="senderMenu = null">
+          <div class="fx-custom-lobby-chat-context-menu" role="menu" :style="{ left: senderMenu.x + 'px', top: senderMenu.y + 'px' }" @click.stop>
+            <strong>{{ senderMenu.senderName }}</strong>
+            <button type="button" role="menuitem" @click="insertMention">@ {{ labels.mention }}</button>
+          </div>
+        </div>
+      </Teleport>
       <span v-if="status" class="fx-custom-lobby-chat-status">{{ status }}</span>
       <span class="fx-custom-lobby-chat-command-hint">/diag · /help</span>
       <form class="fx-custom-lobby-chat-compose" @submit.stop.prevent="submit">
-        <input v-model="message" type="text" :placeholder="labels.chatPlaceholder" :aria-label="labels.chatPlaceholder" @keydown.stop @keyup.stop @keypress.stop>
+        <input ref="chatInput" v-model="message" type="text" :placeholder="labels.chatPlaceholder" :aria-label="labels.chatPlaceholder" @keydown.stop @keyup.stop @keypress.stop>
         <button type="submit">{{ labels.send }}</button>
       </form>
     </section>`,

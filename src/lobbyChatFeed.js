@@ -2,6 +2,7 @@ const listeners = new Set();
 const history = [];
 let decodedEntryCount = 0;
 let publishedMessageCount = 0;
+let duplicateMessageCount = 0;
 let chatModeCommandCount = 0;
 let lastChatModeCommand = null;
 const packetCounts = Object.create(null);
@@ -36,8 +37,18 @@ function publish(message) {
   const entry = {
     id: String(message?.id ?? `${Date.now()}:${Math.random().toString(36).slice(2)}`),
     text,
-    senderId: Number.isInteger(message?.senderId) ? message.senderId : null,
+    senderId: Number.isInteger(Number(message?.senderId)) ? Number(message.senderId) : null,
   };
+  // Room chat entries can be replayed by the socket parser after a reconnect.
+  // Their room/index ID is stable, so ignore only an identical entry with the
+  // same ID; two intentionally repeated messages have different IDs.
+  const duplicate = history.some(existing => existing.id === entry.id
+    && existing.senderId === entry.senderId
+    && existing.text === entry.text);
+  if (duplicate) {
+    duplicateMessageCount++;
+    return;
+  }
   history.push(entry);
   if (history.length > 60) history.splice(0, history.length - 60);
   publishedMessageCount++;
@@ -60,6 +71,7 @@ function subscribe(listener) {
 function getDiagnostics() {
   return {
     packetCounts: { ...packetCounts }, decodedEntryCount, publishedMessageCount,
+    duplicateMessageCount,
     bufferedMessageCount: history.length, subscriberCount: listeners.size,
     chatModeCommandCount, lastChatModeCommand,
   };

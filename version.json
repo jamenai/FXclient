@@ -1,8 +1,9 @@
 {
-    "version": "0.1.7",
+    "version": "0.1.8",
     "lastUpdated": "November 7",
     "changes": [
-        "Update lobby layout test fixtures to match the current lobby structure and sizing rules"
+        "Keep the custom lobby active when returning from a match",
+        "Prevent duplicate lobby chat entries and add account ID mentions from chat names"
     ],
-    "isSignificant": false
+    "isSignificant": true
 }

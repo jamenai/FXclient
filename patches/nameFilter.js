@@ -38,6 +38,7 @@ export default definePatch(({ replaceCode }) => {
             ipHashValue: ipHashValue
         };
     }`, `lobbyPlayers.createEntry = function (playerId, playerUsername, rankValue, levelValue, badgeValue, eloValue, colorValue, goldValue, ipHashValue, nameCode) {
+        window.__fx.getLobbyChatMentionToken = accountId => utils.base64.encode(accountId, 5);
         return {
             playerId: playerId,
             playerUsername: nameCode ? __fx.nameFilter.filter(playerUsername) : "Player " + utils.base64.encode(playerId, 2),

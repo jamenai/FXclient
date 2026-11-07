@@ -2363,7 +2363,63 @@ body[data-fx-bot-protection="active"] #fx-sidebar {
 }
 
 .fx-custom-lobby-chat-sender {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	font: inherit;
 	font-weight: 700;
+	cursor: pointer;
+}
+
+.fx-custom-lobby-chat-sender:hover,
+.fx-custom-lobby-chat-sender:focus-visible {
+	text-decoration: underline;
+}
+
+.fx-custom-lobby-chat-menu-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 2147483000;
+	font-family: system-ui, sans-serif;
+	font-size: 14px;
+	line-height: 1.35;
+}
+
+.fx-custom-lobby-chat-context-menu {
+	position: absolute;
+	min-width: 160px;
+	padding: 8px;
+	display: grid;
+	gap: 6px;
+	border: 1px solid rgba(158, 194, 229, .3);
+	border-radius: 9px;
+	background: #101d2b;
+	color: #eaf3fb;
+	font: inherit;
+	box-shadow: 0 10px 28px rgba(0, 0, 0, .42);
+}
+
+.fx-custom-lobby-chat-context-menu strong {
+	padding: 3px 6px;
+	font-size: .82em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.fx-custom-lobby-chat-context-menu button {
+	padding: 7px 9px;
+	border: 1px solid rgba(158, 194, 229, .2);
+	border-radius: 6px;
+	background: rgba(66, 132, 192, .2);
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.fx-custom-lobby-chat-context-menu button:hover {
+	background: rgba(66, 132, 192, .4);
 }
 
 .fx-custom-lobby-chat-empty {
