@@ -31,6 +31,9 @@ import { createVueSettingsView } from "./vueSettingsView.js";
 import { createVueHomeView } from "./homeView.js";
 import { createVueReplayView } from "./replayView.js";
 import { createVueLeaderboardsView } from "./leaderboardsView.js";
+import { createVueLogsView } from "./logsView.js";
+import { createVueGameSettingsView } from "./gameSettingsView.js";
+import { createVueMyAccountView, myAccountAdapter } from "./myAccountView.js";
 import { getVar, getGameMapNames } from "./gameInterface.js";
 import { publishFxBridge } from "./fxBridge.js";
 
@@ -65,6 +68,7 @@ const fxBridge = publishFxBridge(window, {
   selfTerritoryHighlight: { install: installSelfTerritoryHighlight },
   getGameVar: getVar,
   getGameMapNames,
+  myAccountAdapter,
 });
 
 const savedVersion = localStorage.getItem("fx_version");
@@ -79,6 +83,9 @@ createVueSettingsView(settingsManager);
 createVueHomeView();
 createVueReplayView();
 createVueLeaderboardsView();
+createVueLogsView();
+createVueGameSettingsView();
+createVueMyAccountView();
 initializeReplayTimebar();
 const sidebar = createSidebar();
 fxBridge.sidebar = sidebar;

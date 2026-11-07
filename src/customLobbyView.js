@@ -1152,6 +1152,7 @@ let nativeLobbySuppressionSawDeparture = false;
 let nativeLobbySuppressionReturnState = null;
 let observedNativeMenu = null;
 let nativeLobbyReturnPending = false;
+let nativeLobbyReturnUntil = 0;
 
 export function initializeCustomLobbyView() {
   migrateLobbyViewPreference();
@@ -1181,12 +1182,11 @@ export function initializeCustomLobbyView() {
         || (currentLobbyRoot && currentLobbyRoot !== nativeLobbySuppressionRoot));
     if (nativeLobbyReturnPending) {
       // The native end-of-game callback fires before the game state and menu
-      // finish transitioning. Honor that explicit return signal immediately.
-      if (!inGame) nativeLobbyReturnPending = false;
-      else {
-        previousGameState = gameState;
-        return "/lobby";
-      }
+      // finish transitioning. Keep honoring that explicit signal throughout
+      // the transition so a late native menu update cannot select /classic.
+      previousGameState = gameState;
+      if (inGame || Date.now() < nativeLobbyReturnUntil) return "/lobby";
+      nativeLobbyReturnPending = false;
     }
     if (inGame || (previousGameState === 1 && !inGame) || returnedToLobby) {
       if (classicSessionDisabled) console.info("[ZFX Client LobbyView] Re-enabling custom lobby", {
@@ -1236,20 +1236,39 @@ export function initializeCustomLobbyView() {
   window.__fx.onGameReturnedToLobby = () => {
     classicSessionDisabled = false;
     nativeLobbyReturnPending = true;
+    nativeLobbyReturnUntil = Date.now() + 6000;
     nativeLobbySuppressionRoot = null;
     nativeLobbySuppressionSawDeparture = false;
     nativeLobbySuppressionReturnState = null;
-    if (window.__fx?.settings?.customLobbyView !== false) {
-      router.replace("/lobby").then(() => {
-        window.setTimeout(() => window.dispatchEvent(new Event("fx-native-lobby-return")), 50);
-      }).catch(error => console.error("[ZFX Client] Lobby return navigation failed:", error));
+    if (window.__fx?.settings?.customLobbyView === false) {
+      nativeLobbyReturnPending = false;
+      nativeLobbyReturnUntil = 0;
+      return;
     }
+    let attempts = 0;
+    const restoreLobby = () => {
+      if (window.__fx?.settings?.customLobbyView === false || attempts++ >= 24) {
+        nativeLobbyReturnPending = false;
+        return;
+      }
+      if (router.currentRoute.value.path !== "/lobby") {
+        router.replace("/lobby").catch(error => console.error("[ZFX Client] Lobby return navigation failed:", error));
+      }
+      window.dispatchEvent(new Event("fx-native-lobby-return"));
+      window.setTimeout(restoreLobby, 250);
+    };
+    restoreLobby();
   };
   window.__fx.installNativeLobbyRouteObserver = (menuManager, setStateKey, stateField) => {
     if (!menuManager || !setStateKey || !stateField
       || typeof menuManager[setStateKey] !== "function"
       || !(stateField in menuManager)) return false;
-    observedNativeMenu = { manager: menuManager, stateField };
+    observedNativeMenu = { manager: menuManager, stateField, setStateKey };
+    window.__fx.setNativeMenuState = state => {
+      if (!observedNativeMenu || typeof observedNativeMenu.manager[observedNativeMenu.setStateKey] !== "function") return false;
+      observedNativeMenu.manager[observedNativeMenu.setStateKey](state);
+      return true;
+    };
     window.__fx.nativeMenuState = menuManager[stateField];
     if (menuManager.__fxLobbyRouteObserver) return true;
     const originalSetState = menuManager[setStateKey];
@@ -1267,6 +1286,12 @@ export function initializeCustomLobbyView() {
   window.__fx.onNativeMenuStateChange = (previousState, nextState) => {
     window.__fx.nativeMenuState = nextState;
     window.dispatchEvent(new CustomEvent("fx-native-menu-state-change", { detail: { previousState, nextState } }));
+    // Returning from a match can reach the native lobby through a different
+    // menu path than the patched game-end handler. State 0 is the game's
+    // original lobby; use that transition as a second, native return signal.
+    if (nextState === 0 && previousState !== 0 && !nativeLobbyReturnPending) {
+      window.__fx.onGameReturnedToLobby?.();
+    }
     if (!classicSessionDisabled) return;
     const returnedToOriginalLobbyState = nativeLobbySuppressionReturnState !== null
       && nextState === nativeLobbySuppressionReturnState;
@@ -1305,11 +1330,13 @@ export function initializeCustomLobbyView() {
     if (window.__fx?.showCustomLobbyView) delete window.__fx.showCustomLobbyView;
     if (window.__fx?.onGameReturnedToLobby) delete window.__fx.onGameReturnedToLobby;
     if (window.__fx?.installNativeLobbyRouteObserver) delete window.__fx.installNativeLobbyRouteObserver;
+    if (window.__fx?.setNativeMenuState) delete window.__fx.setNativeMenuState;
     if (window.__fx?.onNativeMenuStateChange) delete window.__fx.onNativeMenuStateChange;
     classicSessionDisabled = false;
     nativeLobbySuppressionRoot = null;
     nativeLobbySuppressionReturnState = null;
     nativeLobbyReturnPending = false;
+    nativeLobbyReturnUntil = 0;
     previousGameState = null;
   };
 }

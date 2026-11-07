@@ -31,7 +31,7 @@ export default definePatch(({ insertCode, modifyCode, replaceCode, replaceRawCod
   // Hide propaganda popup
   // The native propaganda dialog is appended directly to body; put its backdrop
   // above custom lobby and Vue views so the whole prompt remains visible.
-  replaceRawCode('w9.style.zIndex="6"', 'w9.style.zIndex="2147483647"');
+  replaceRawCode('w9.style.zIndex="6"', 'w9.id="fx-propaganda-overlay";w9.style.zIndex="2147483647"');
   insertCode(`/* here */
     a = b.c + 60 * 1000;
     (new ea()).show(eS.eb, eS.colors, eS.id);

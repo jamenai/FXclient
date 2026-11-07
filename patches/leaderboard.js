@@ -7,13 +7,17 @@ export default definePatch(({ safeDictionary: dict, modifyCode, waitForMinificat
 		"aTl=[new x(L(360),function(){aTm(1)}",
 		"window.__fx.leaderboardsAdapter=window.__fx.leaderboardsAdapter||{};window.__fx.leaderboardsAdapter.requestCategory=function(type){u.v(8,u.ua,new ub(21,{ur:type,us:0,ut:10}));};window.__fx.leaderboardsAdapter.requestRange=function(type,start,end){u.v(8,u.a7I(10).a3U,new ub(21,{ur:type,us:start,ut:end}));};window.__fx.leaderboardsAdapter.searchName=function(type,name,quantity){u.v(8,u.a7I(10).a3U,new ub(22,{ur:type,aT5:String(name||\"\").slice(0,20),aT6:Math.max(1,Math.floor(Number(quantity)||10))}));};window.__fx.leaderboardsAdapter.searchId=function(type,id,quantity){u.v(8,u.a7I(10).a3U,new ub(28,{ur:type,aT5:String(id||\"\").slice(0,5),aT6:Math.max(1,Math.floor(Number(quantity)||5))}));};window.__fx.leaderboardsAdapter.closeNative=function(count){for(var fxStep=0;fxStep<(count||1);fxStep++)u.a3O();};aTl=[new x(L(360),function(){aTm(1)}"
 	);
+	replaceRawCode(
+		"aTl=[new x(L(376),function(){aTm(5)}",
+		"window.__fx.logsAdapter=window.__fx.logsAdapter||{};window.__fx.logsAdapter.requestCategory=function(type,start,end){window.__fx.logsAdapter.active=true;window.__fx.logsAdapter.currentType=type;u.v(8,u.ua,new ub(21,{ur:type,us:start||0,ut:end||10}));};window.__fx.logsAdapter.requestRange=function(type,start,end){window.__fx.logsAdapter.active=true;window.__fx.logsAdapter.currentType=type;u.v(8,u.a7I(10).a3U,new ub(21,{ur:type,us:start,ut:end}));};window.__fx.logsAdapter.searchName=function(type,name,quantity){window.__fx.logsAdapter.active=true;window.__fx.logsAdapter.currentType=type;u.v(8,u.a7I(10).a3U,new ub(22,{ur:type,aT5:String(name||\"\").slice(0,20),aT6:Math.max(1,Math.floor(Number(quantity)||10))}));};window.__fx.logsAdapter.searchId=function(type,id,quantity){window.__fx.logsAdapter.active=true;window.__fx.logsAdapter.currentType=type;u.v(8,u.a7I(10).a3U,new ub(28,{ur:type,aT5:String(id||\"\").slice(0,5),aT6:Math.max(1,Math.floor(Number(quantity)||5))}));};window.__fx.logsAdapter.closeNative=function(count){window.__fx.logsAdapter.active=false;for(var fxStep=0;fxStep<(count||1);fxStep++)u.a3O();};aTl=[new x(L(376),function(){aTm(5)}"
+	);
 	replaceOne(
 		/function aD4\(data\)\{var aQN;var aTo;/g,
-		"function aD4(data){if(!data.aD5&&window.__fx.leaderboardsAdapter)window.__fx.leaderboardsAdapter.currentType=data.ur;var aQN;var aTo;"
+		"function aD4(data){if(!data.aD5&&window.__fx.logsAdapter?.active)window.__fx.logsAdapter.currentType=data.ur;else if(!data.aD5&&window.__fx.leaderboardsAdapter)window.__fx.leaderboardsAdapter.currentType=data.ur;var aQN;var aTo;"
 	);
 	replaceOne(
 		/function uH\(sE,data,oM\)\{var fZ=data\.uI\.length;/g,
-		"function uH(sE,data,oM){if(Number.isInteger(window.__fx.leaderboardsAdapter?.currentType)){var type=window.__fx.leaderboardsAdapter.currentType;window.__fx.leaderboardsAdapter.receiveTable?.({category:type,headers:data.uO,widths:data.uV,rows:data.uI.map(row=>row.map(cell=>({text:String(cell?.g1??\"\"),interactive:cell?.ea===1,id:cell?.uY??null,secondaryId:cell?.uZ??null})))});window.__fx.leaderboardsAdapter.currentType=null;}var fZ=data.uI.length;"
+		"function uH(sE,data,oM){var activeLogs=window.__fx.logsAdapter?.active;var activeAdapter=activeLogs?window.__fx.logsAdapter:window.__fx.leaderboardsAdapter;if(Number.isInteger(activeAdapter?.currentType)){var type=activeAdapter.currentType;activeAdapter.receiveTable?.({category:type,headers:data.uO,widths:data.uV,rows:data.uI.map(row=>row.map(cell=>({text:String(cell?.g1??\"\"),interactive:cell?.ea===1,id:cell?.uY??null,secondaryId:cell?.uZ??null})))});activeAdapter.currentType=null;}var fZ=data.uI.length;"
 	);
 
 	// Player list and leaderboard filter tabs

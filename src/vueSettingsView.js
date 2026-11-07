@@ -19,13 +19,21 @@ const VueSettingsView = defineComponent({
     });
     const sectionTranslations = {
       general: ["General", "Allgemein"], allgemein: ["General", "Allgemein"],
-      "in-gamedisplay": ["In-game display", "Spielanzeige"], spielanzeige: ["In-game display", "Spielanzeige"],
+      "in-gamedisplay": ["In-game display", "Spielanzeige"], ingamedisplay: ["In-game display", "Spielanzeige"], spielanzeige: ["In-game display", "Spielanzeige"],
       density: ["Density", "Dichte"], dichte: ["Density", "Dichte"],
       attackestimate: ["Attack estimate", "Angriffssch\u00e4tzung"], angriffsschaetzung: ["Attack estimate", "Angriffssch\u00e4tzung"],
       ownterritory: ["Own territory", "Eigenes Gebiet"], eigenesgebiet: ["Own territory", "Eigenes Gebiet"],
       names: ["Names", "Namen"], namen: ["Names", "Namen"], controls: ["Controls", "Steuerung"], steuerung: ["Controls", "Steuerung"],
       home: ["Home", "Startseite"], startseite: ["Home", "Startseite"], lobby: ["Lobby", "Lobby"],
       replays: ["Replays", "Wiederholungen"], wiederholungen: ["Replays", "Wiederholungen"], about: ["About", "\u00dcber"], uber: ["About", "\u00dcber"],
+      notifications: ["Notifications", "Benachrichtigungen"], benachrichtigungen: ["Notifications", "Benachrichtigungen"],
+      "in-game": ["In-game", "Im Spiel"], ingame: ["In-game", "Im Spiel"], imspiel: ["In-game", "Im Spiel"],
+      interface: ["Interface", "Benutzeroberfläche"], benutzeroberfläche: ["Interface", "Benutzeroberfläche"],
+      playback: ["Playback", "Wiedergabe"], wiedergabe: ["Playback", "Wiedergabe"],
+      reminderrules: ["Reminder rules", "Erinnerungsregeln"], erinnerungsregeln: ["Reminder rules", "Erinnerungsregeln"],
+      mutedlobbypings: ["Muted lobby pings", "Stumme Lobby-Erwähnungen"], stummelobbyerwähnungen: ["Muted lobby pings", "Stumme Lobby-Erwähnungen"],
+      savedreplays: ["Saved Replays", "Gespeicherte Replays"], gespeichertereplays: ["Saved Replays", "Gespeicherte Replays"],
+      popups: ["Popups", "Pop-ups"],
     };
     const updateLanguage = () => {
       isGerman.value = String(window.__fx?.getGameLanguage?.() || "en").toLowerCase().startsWith("de");
@@ -36,9 +44,14 @@ const VueSettingsView = defineComponent({
       props.settingsManager.refreshTranslations?.();
       props.settingsManager.syncFields();
       updateFooterLabels();
+      for (const tab of settingsTabs.value) {
+        for (const subsection of tab.subsections || []) {
+          subsection.button.textContent = translateSection(subsection.label);
+        }
+      }
     };
     const translateSection = label => {
-      const key = String(label).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+      const key = String(label).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
       const pair = sectionTranslations[key];
       return pair ? pair[isGerman.value ? 1 : 0] : label;
     };
@@ -76,7 +89,7 @@ const VueSettingsView = defineComponent({
         let currentGroup = null;
         for (const node of Array.from(content.childNodes)) {
           const heading = node.nodeType === Node.ELEMENT_NODE
-            ? node.querySelector?.(".settings-section-title")
+            ? node.querySelector?.(".settings-category-title")
             : null;
           if (heading) {
             currentGroup = { id: `settings-section-${groups.length}`, label: heading.textContent.trim(), nodes: [] };
@@ -85,9 +98,67 @@ const VueSettingsView = defineComponent({
         }
         for (const group of groups) {
           const panel = document.createElement("div");
-          panel.className = "fx-settings-section-panel";
+          panel.className = "fx-settings-category-panel";
           panel.hidden = group !== groups[0];
-          panel.append(...group.nodes);
+          const subsections = [];
+          let currentSubsection = null;
+          const ungroupedNodes = [];
+          for (const node of group.nodes) {
+            const heading = node.nodeType === Node.ELEMENT_NODE
+              ? node.querySelector?.(".settings-subsection-title")
+              : null;
+            if (heading) {
+              currentSubsection = {
+                id: `${group.id}-subsection-${subsections.length}`,
+                label: heading.dataset.settingsSubsectionLabel || heading.textContent.trim().replace(/\s*\(.*$/, ""),
+                nodes: [node],
+              };
+              subsections.push(currentSubsection);
+            } else if (currentSubsection) currentSubsection.nodes.push(node);
+            else ungroupedNodes.push(node);
+          }
+          if (subsections.length) {
+            panel.classList.add("has-subsections");
+            if (ungroupedNodes.length) {
+              const preamble = document.createElement("div");
+              preamble.className = "fx-settings-category-preamble";
+              preamble.append(...ungroupedNodes);
+              panel.append(preamble);
+            }
+            const subsectionNav = document.createElement("nav");
+            subsectionNav.className = "fx-settings-subtabs";
+            subsectionNav.setAttribute("role", "tablist");
+            subsectionNav.setAttribute("aria-label", labels.value.sections);
+            const subsectionContent = document.createElement("div");
+            subsectionContent.className = "fx-settings-subsection-panels";
+            subsections.forEach((subsection, index) => {
+              const button = document.createElement("button");
+              button.type = "button";
+              button.className = "fx-settings-subtab";
+              button.setAttribute("role", "tab");
+              button.setAttribute("aria-selected", index === 0 ? "true" : "false");
+              button.textContent = translateSection(subsection.label);
+              const subpanel = document.createElement("section");
+              subpanel.className = "fx-settings-subsection-panel";
+              subpanel.setAttribute("role", "tabpanel");
+              subpanel.hidden = index !== 0;
+              subpanel.append(...subsection.nodes);
+              button.addEventListener("click", () => {
+                subsections.forEach(item => {
+                  item.button.classList.toggle("is-active", item === subsection);
+                  item.button.setAttribute("aria-selected", item === subsection ? "true" : "false");
+                  item.panel.hidden = item !== subsection;
+                });
+              });
+              subsection.button = button;
+              subsection.panel = subpanel;
+              if (index === 0) button.classList.add("is-active");
+              subsectionNav.append(button);
+              subsectionContent.append(subpanel);
+            });
+            panel.append(subsectionNav, subsectionContent);
+          } else panel.append(...group.nodes);
+          group.subsections = subsections;
           group.panel = panel;
         }
         content.replaceChildren(...groups.map(group => group.panel));

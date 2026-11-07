@@ -102,7 +102,7 @@ const FxHomeView = defineComponent({
 
     const startMultiplayer = () => window.__fx?.startMultiplayer?.();
     const openScenario = () => window.__fx?.openCustomScenario?.();
-    const openAccount = () => window.__fx?.openAccount?.();
+    const openAccount = () => window.__fx?.openVueMyAccount?.();
     const openGameMenu = () => window.__fx?.openGameMenu?.();
     const openSettings = () => window.__fx?.openVueSettings?.();
     const openCustomLobby = () => window.__fx?.customLobby?.showJoinPrompt?.();

@@ -208,10 +208,10 @@ function createLegacySidebar() {
     ["⚔️", "sidebarMultiplayer", () => window.__fx?.startMultiplayer?.()],
     ["🏆", "sidebarLeaderboard", () => window.__fx?.openVueLeaderboards?.()],
     ["▶", "sidebarReplays", () => window.__fx?.openGameMenuAction?.("replays")],
-    ["📜", "sidebarLogs", () => window.__fx?.openGameMenuAction?.("logs")],
+    ["📜", "sidebarLogs", () => window.__fx?.openVueLogs?.()],
   ]);
   appendSection("sidebarAccountGroup", [
-    ["⚙", "sidebarGameSettings", () => window.__fx?.openGameMenuAction?.("settings")],
+    ["⚙", "sidebarGameSettings", () => window.__fx?.openVueGameSettings?.()],
     ["settings", "sidebarSettings", () => typeof window.__fx?.openVueSettings === "function"
       ? window.__fx.openVueSettings() : window.__fx?.WindowManager?.openWindow("settings")],
     ["🔑", "sidebarAccount", () => window.__fx?.openAccount?.()],

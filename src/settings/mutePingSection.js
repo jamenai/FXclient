@@ -30,11 +30,11 @@ export function MutePingSection(container) {
     { key: "mutePingDirect", label: "settingMuteUsername" }
   ];
 
-  const header = document.createElement("p");
-  const heading = document.createElement("b");
+  const heading = document.createElement("h3");
+  heading.className = "settings-subsection-title";
+  heading.dataset.settingsSubsectionLabel = "Muted lobby pings";
   heading.innerText = window.__fx?.translateFX?.("settingMutedPings") ?? "Muted lobby pings";
-  header.append(heading);
-  container.append(header);
+  container.append(heading);
 
   const master = createCheckboxRow("settingMuteAllPings");
   container.append(master.label, document.createElement("br"));

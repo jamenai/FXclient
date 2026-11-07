@@ -2,13 +2,13 @@ import { gameOptions, mapOptions, contestOptions, refreshMapOptions, ANY, NONE }
 
 export function LobbyReminderRulesInput(containerElement) {
     const t = key => window.__fx?.translateFX?.(key) ?? key;
-    const header = document.createElement("p");
-    const heading = document.createElement("b");
+    const heading = document.createElement("h3");
+    heading.className = "settings-subsection-title";
+    heading.dataset.settingsSubsectionLabel = "Reminder rules";
     heading.innerText = t("settingReminderRules");
-    header.append(heading);
     const note = document.createElement("small");
     note.innerText = t("settingReminderRulesNote");
-    containerElement.append(header, note, document.createElement("br"));
+    containerElement.append(heading, note, document.createElement("br"));
 
     this.fields = [
         { key: "game", label: "settingReminderGame", options: gameOptions },

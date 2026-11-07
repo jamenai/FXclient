@@ -2,14 +2,16 @@
 export function createReplayHistoryList({ history, closeSettings, saveFile, createButton, copyToClipboard, showAlert }) {
   function ReplayHistoryList(container) {
     const t = key => window.__fx?.translateFX?.(key) ?? key;
-    const title = document.createElement("p");
-    title.innerHTML = "<b></b>";
+    const title = document.createElement("h3");
+    title.className = "settings-subsection-title";
     const titleSuffix = document.createTextNode("");
     title.append(titleSuffix);
     const updateTitle = () => {
-      title.querySelector("b").textContent = t("settingSavedReplays").split(" (")[0];
+      const heading = t("settingSavedReplays").split(" (")[0];
       titleSuffix.nodeValue = " " + (t("settingSavedReplays").match(/\(.*\)$/)?.[0] ?? "");
+      title.replaceChildren(document.createTextNode(heading), titleSuffix);
     };
+    title.dataset.settingsSubsectionLabel = "Saved Replays";
     updateTitle();
     container.append(title);
   

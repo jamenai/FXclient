@@ -39,6 +39,12 @@ export default (/** @type {ModUtils} */ modUtils) => {
 	insertCode(`an.init();ai.a5l();bA.pQ.qC = [];bA.hZ.pT = 1;/* here */`,
 	`__fx.donationsTracker.reset(), __fx.leaderboardFilter.reset(), __fx.customLobby.isActive() && __fx.customLobby.hideWindow();`);
 
+    // Capture the native profile payload before the game's final minification
+    // changes its local function names. The client adapter maps this payload to
+    // named account fields for the Vue account view.
+    const accountProfilePattern = /function (?<profileFunction>\w+)\(data\)\{var \w+;var \w+;function \w+\(\)\{\w+=new \w+\(data\.username,/g;
+    const { profileFunction } = modUtils.matchOne(accountProfilePattern).groups;
+    modUtils.replaceOne(new RegExp(`function ${profileFunction}\\(data\\)\\{`, "g"), "$&if(String(data.uY).toLowerCase()===String(__fx.getNativeAccountId?.()).toLowerCase())__fx.myAccountAdapter?.setNativeProfile?.(data);");
     waitForMinification(() => applyPatches(modUtils))
 }
 //export const requiredVariables = ["game", "playerId", "playerData", "rawPlayerNames", "gIsSingleplayer", "playerTerritories"];
@@ -180,7 +186,7 @@ function applyPatches(/** @type {ModUtils} */ modUtils) {
     const { buttons: accountMenuButtons } = matchOne(accountMenuButtonsPattern).groups;
     const homeNameInputPattern = /(?<nameInput>\w+)\s*=\s*new\s+\w+\(\s*(?<settingsBuffer>\w+)\.buffer\.data\[122\]\s*\)\s*;/g;
     const { nameInput, settingsBuffer } = matchOne(homeNameInputPattern).groups;
-    replaceOne(homeNameInputPattern, `$&window.__fx.getNativeHomeNameInput=()=>${nameInput}.e;window.__fx.getNativeAccountId=()=>${settingsBuffer}.buffer.data[105]?.value||"";window.__fx.setNativeHomeName=value=>{var input=${nameInput}.e;if(!input)return false;input.value=String(value).slice(0,20);input.dispatchEvent(new Event("blur"));return true};`);
+    replaceOne(homeNameInputPattern, `$&window.__fx.getNativeHomeNameInput=()=>${nameInput}.e;window.__fx.getNativeAccountId=()=>${settingsBuffer}.buffer.data[105]?.value||"";window.__fx.getNativeGameLabel=id=>L(id);window.__fx.setNativeHomeName=value=>{var input=${nameInput}.e;if(!input)return false;input.value=String(value).slice(0,20);input.dispatchEvent(new Event("blur"));return true};window.__fx.gameSettingsAdapter={getSnapshot:function(){var langs=bA.data.aEe();var values={};[1,2,5,7,8,9,11,12,13,14,15,16].forEach(function(id){values[id]=bm.buffer.data[id]?.value;});var languageOptions=langs.map(function(entry){var parts=String(entry).split(":");return{value:parts[0],label:parts.slice(1).join(":")||parts[0]};});return{values:values,connection:aa.aIM,options:{language:languageOptions,resolution:[L(455),L(456),L(457),L(458)],minimumFont:[L(456),L(460),L(461)],textSpeed:[L(463),L(9),L(464)],connection:[L(473),L(474),L(475)]},labels:{information:L(452),informationNote:L(453),resolution:L(454),minimumFont:L(459),textSpeed:L(462),largeUi:L(465),placeBalance:L(466),hideZoom:L(467),font:L(468),messageBox:L(469),keepClosed:L(470),muted:L(471),connection:L(472),highlighting:L(476),intensity:L(477),shortcuts:L(478),reset:L(451),close:L(40)},shortcutGroups:(ba.aV2||[]).map(function(label,index){return{label:label,keys:[{index:index*2,value:ba.aDw[index*2]||""},{index:index*2+1,value:ba.aDw[index*2+1]||""}]};})};},setField:function(id,value){if(!bm.buffer.data[id])return false;bm.qo.qp(id,value);return true;},setConnection:function(value){aa.aIM=Number(value)||0;},setShortcut:function(index,value){ba.aV4(index,String(value||""));},resetShortcuts:function(){ba.aV1();},reset:function(){bm.qo.xw();}};`);
     const { openMenuAction } = matchOne(
         /function (?<openMenuAction>\w+)\(\w+\)\{\w+\.\w+\.setState\(10\)/g
     ).groups;
@@ -196,7 +202,7 @@ function applyPatches(/** @type {ModUtils} */ modUtils) {
     ).groups;
     replaceOne(
         new RegExp(`${viewportWidth}=${dimension}\\(document\\.documentElement\\.clientWidth\\)`, "g"),
-        `${viewportWidth}=Math.max(128,${dimension}(document.documentElement.clientWidth)-__fx.sidebar.getWidth())`
+        `${viewportWidth}=Math.max(128,${dimension}(document.documentElement.clientWidth)-(__fx.sidebar?.getWidth?.()||0))`
     );
 
     replaceOne(
@@ -206,7 +212,7 @@ function applyPatches(/** @type {ModUtils} */ modUtils) {
 
     replaceOne(
         /this\.(?<resizeMethod>\w+)=function\((?<resizeArg>\w+)\)\{by=!0,resize\(\k<resizeArg>\)\}/g,
-        "$&,__fx.sidebar.setResizeHandler(function(){resize(0)})"
+        "$&,(()=>{const handler=()=>resize(0);let attempts=0;const attach=()=>{if(__fx.sidebar?.setResizeHandler){__fx.sidebar.setResizeHandler(handler);return}if(++attempts<100)setTimeout(attach,50)};attach()})()"
     );
 
     const { scaleObject, scaleField } = matchOne(
@@ -216,13 +222,13 @@ function applyPatches(/** @type {ModUtils} */ modUtils) {
     replaceRequired(
         modUtils,
         new RegExp(`${scaleExpression}(\\w+)\\.touches\\[(\\d+)\\]\\.clientX`, "g"),
-        (_match, event, touchIndex) => `${scaleObject}.${scaleField}*__fx.sidebar.toGameX(${event}.touches[${touchIndex}],${event})`,
+        (_match, event, touchIndex) => `${scaleObject}.${scaleField}*(__fx.sidebar?.toGameX?.(${event}.touches[${touchIndex}],${event})??${event}.touches[${touchIndex}].clientX)`,
         "touch coordinate mapping"
     );
     replaceRequired(
         modUtils,
         new RegExp(`${scaleExpression}(\\w+)\\.clientX`, "g"),
-        (_match, event) => `${scaleObject}.${scaleField}*__fx.sidebar.toGameX(${event})`,
+        (_match, event) => `${scaleObject}.${scaleField}*(__fx.sidebar?.toGameX?.(${event})??${event}.clientX)`,
         "mouse coordinate mapping"
     );
 

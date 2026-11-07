@@ -22,6 +22,9 @@ const CustomQuickEmojis = createCustomQuickEmojis({
 // its setting yet, use English instead of silently inheriting the browser locale.
 const settingsLanguage = () => String(__fx.getGameLanguage?.() || "en").toLowerCase();
 const settingsTextDe = {
+  Notifications: "Benachrichtigungen",
+  "In-game": "Im Spiel", Interface: "Benutzeroberfläche",
+  Popups: "Pop-ups",
   General: "Allgemein", "In-game display": "Spielanzeige", Density: "Dichte", "Attack estimate": "Angriffsschätzung",
   "Own territory": "Eigenes Gebiet", Names: "Namen", Controls: "Steuerung", Home: "Startseite", Lobby: "Lobby", Replays: "Wiederholungen", About: "Über",
   "Use fullscreen mode": "Vollbildmodus verwenden",
@@ -428,8 +431,17 @@ function StartingPercentageInput(container) {
 
 function SectionHeader(text) {
   return function (container) {
+    const title = document.createElement("h3");
+    title.className = "settings-subsection-title";
+    bindSettingsText(text, value => { title.innerText = value; });
+    container.append(title);
+  };
+}
+
+function CategoryHeader(text) {
+  return function (container) {
     const title = document.createElement("h2");
-    title.className = "settings-section-title";
+    title.className = "settings-category-title";
     bindSettingsText(text, value => { title.innerText = value; });
     container.append(title);
   };
@@ -437,7 +449,7 @@ function SectionHeader(text) {
 
 const settingsManager = new (function () {
   const settingsStructure = [
-    SectionHeader("General"),
+    CategoryHeader("General"),
     {
       for: "useFullscreenMode",
       type: "checkbox",
@@ -463,12 +475,8 @@ const settingsManager = new (function () {
       tooltip:
         "A custom image to be shown as the main menu background instead of the currently selected map.",
     },
-    {
-      for: "hidePropagandaPopup",
-      type: "checkbox",
-      label: "Hide propaganda popup"
-    },
     //{ for: "hideAllLinks", type: "checkbox", label: "Hide Links option also hides app store links" },
+    CategoryHeader("In-game"),
     SectionHeader("In-game display"),
     {
       for: "displayWinCounter",
@@ -615,6 +623,7 @@ const settingsManager = new (function () {
     },
     StartingPercentageInput,
     CustomQuickEmojis,
+    CategoryHeader("Interface"),
     SectionHeader("Home"),
     {
       for: "customHomeView",
@@ -662,9 +671,17 @@ const settingsManager = new (function () {
       label: "Same clan highlighting",
       note: "Highlights you and every player in the lobby's team list who has the same clan tag as you in red. When duplicate IP highlighting is also on players matching both get a red outline around their IP color.",
     },
+    CategoryHeader("Notifications"),
+    SectionHeader("Popups"),
+    {
+      for: "hidePropagandaPopup",
+      type: "checkbox",
+      label: "Hide propaganda popup"
+    },
     LobbyReminderRulesInput,
     MutePingSection,
-    SectionHeader("Replays"),
+    CategoryHeader("Replays"),
+    SectionHeader("Playback"),
     {
       for: "showReplayTimebar",
       type: "checkbox",
@@ -672,7 +689,7 @@ const settingsManager = new (function () {
       note: "Show a seek bar when watching replays, allowing you to skip to any point of the replay. Seeking backward re-simulates the replay from the start, which can take a few seconds.",
     },
     ReplayHistoryList,
-    SectionHeader("About"),
+    CategoryHeader("About"),
     function Footer(container) {
       const versionInfo = document.createElement("p");
       versionInfo.innerText = `ZFX Client v${versionData.version}`;

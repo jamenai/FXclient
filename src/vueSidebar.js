@@ -75,12 +75,12 @@ const VueSidebar = defineComponent({
         { icon: "⚔", label: t("sidebarMultiplayer"), action: openNativeAction(() => window.__fx?.startMultiplayer?.()) },
         { icon: "🏆", label: t("sidebarLeaderboard"), action: () => window.__fx?.openVueLeaderboards?.() },
         { icon: "▶", label: t("sidebarReplays"), action: () => window.__fx?.openVueReplays?.() },
-        { icon: "▤", label: t("sidebarLogs"), action: openNativeAction(() => window.__fx?.openGameMenuAction?.("logs")) },
+        { icon: "▤", label: t("sidebarLogs"), action: () => window.__fx?.openVueLogs?.() },
       ] },
       { title: t("sidebarAccountGroup"), items: [
-        { icon: "⚙", label: t("sidebarGameSettings"), action: openNativeAction(() => window.__fx?.openGameMenuAction?.("settings")) },
+        { icon: "⚙", label: t("sidebarGameSettings"), action: () => window.__fx?.openVueGameSettings?.() },
         { icon: "⚙", label: t("sidebarSettings"), action: () => window.__fx?.openVueSettings?.() },
-        { icon: "account", label: t("sidebarAccount"), action: openNativeAction(() => window.__fx?.openAccount?.()) },
+        { icon: "account", label: t("sidebarAccount"), action: () => window.__fx?.openVueMyAccount?.() },
         { icon: "◆", label: t("sidebarGoldTransfer"), action: openNativeAction(() => window.__fx?.openGameMenuAction?.("goldTransfer")) },
       ] },
     ]);

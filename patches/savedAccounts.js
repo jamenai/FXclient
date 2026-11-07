@@ -12,6 +12,10 @@ export default definePatch(({ matchCode, modifyCode }) => {
     modifyCode(`accountList = new RadioList(storage.buffer.data[117], updateButtons);
         ${insert(`__fx.savedAccounts.decorate(accountList.entries, storage.buffer.data[117].options);`)}
         updateButtons(0);
+        ${insert(`__fx.myAccountAdapter?.setSavedAccounts?.(storage.buffer.data[117], function(index) {
+            if (accountList.entries[index]) accountList.entries[index].click();
+            else { storage.buffer.data[117].value = index; updateButtons(index); }
+        }, function() { buttons[0].button.click(); }, function() { buttons[1].button.click(); });`)}
         accountList.entries[0].style.marginTop = "0.5em";
         section.addRadioList(accountList);
         section.add(new ButtonRow([buttons[0].button]));
