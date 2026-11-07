@@ -87,6 +87,39 @@
 .fx-update-prompt-apply { border-color: rgba(65, 223, 150, .34) !important; background: linear-gradient(105deg, #177a58, #159a69); color: #effff7 !important; }
 .fx-update-prompt-actions button:hover { filter: brightness(1.15); }
 
+.fx-changelog {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	width: min(620px, calc(100vw - 32px));
+	max-width: none;
+	max-height: min(80vh, 720px);
+	margin: 0;
+	padding: 24px;
+	transform: translate(-50%, -50%);
+	border: 1px solid rgba(110, 190, 231, .28);
+	border-radius: 18px;
+	background: linear-gradient(145deg, #10283b, #091725 78%);
+	color: #eaf5fc;
+	font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+	box-shadow: 0 24px 72px rgba(0, 0, 0, .62), inset 0 1px rgba(255, 255, 255, .05);
+	z-index: 2147483647;
+}
+.fx-changelog::backdrop { background: rgba(2, 8, 15, .68); backdrop-filter: blur(4px); }
+.fx-changelog[open] { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: start; gap: 16px; }
+.fx-changelog-mark { display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid rgba(81, 223, 161, .28); border-radius: 14px; background: rgba(29, 148, 107, .16); color: #76dcb4; font-size: 1.6em; font-weight: 800; }
+.fx-changelog-content { min-width: 0; }
+.fx-changelog-eyebrow { color: #76dcb4; font-size: .68em; font-weight: 800; letter-spacing: .14em; }
+.fx-changelog h2 { margin: 4px 0 2px; color: #f1f8fd; font-size: 1.3em; line-height: 1.25; }
+.fx-changelog-date { margin: 0; color: #8ea8ba; font-size: .84em; }
+.fx-changelog ul { display: grid; gap: 9px; margin: 18px 0 0; padding: 0; list-style: none; }
+.fx-changelog li { position: relative; padding: 10px 12px 10px 30px; border: 1px solid rgba(144, 183, 212, .12); border-radius: 10px; background: rgba(24, 42, 59, .55); color: #d6e6f0; }
+.fx-changelog li::before { position: absolute; top: 10px; left: 12px; color: #62e6ae; content: "✓"; font-weight: 800; }
+.fx-changelog-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
+.fx-changelog-actions button { min-height: 36px; padding: 7px 14px; border: 1px solid rgba(65, 223, 150, .34); border-radius: 8px; background: linear-gradient(105deg, #177a58, #159a69); color: #effff7; font: inherit; font-weight: 700; cursor: pointer; }
+.fx-changelog-actions button:hover { filter: brightness(1.15); }
+@media (max-width: 520px) { .fx-changelog { padding: 18px; } .fx-changelog[open] { grid-template-columns: 38px minmax(0,1fr); gap: 12px; } .fx-changelog-mark { width: 38px; height: 38px; } }
+
 body:has(#fx-custom-lobby-view) .window {
 	z-index: 10000;
 }

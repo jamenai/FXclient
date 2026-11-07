@@ -1,7 +1,8 @@
 {
-    "version": "0.1.13",
+    "version": "0.1.14",
     "lastUpdated": "November 7, 2026",
     "changes": [
+        "Restyle the What's New dialog to match the client views",
         "Move the What's New dialog to the Vue view system",
         "Show propaganda messages in a Vue top-layer dialog with their original colors",
         "Recover existing native propaganda popups into the Vue dialog",
