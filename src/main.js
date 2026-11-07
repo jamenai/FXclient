@@ -13,7 +13,7 @@ import gameScriptUtils from "./gameScriptUtils.js";
 import hoveringTooltip from "./hoveringTooltip.js";
 import { keybindFunctions, keybindHandler, mobileKeybinds } from "./keybinds.js";
 import customLobby from './customLobby.js';
-import { displayChangelog } from './changelog.js';
+import { displayChangelog, initializeChangelogView } from './changelog.js';
 import { reportError } from './debugging.js';
 import replayHistory from './replayHistory.js';
 import replay, { initializeReplayTimebar } from './replay.js';
@@ -72,6 +72,7 @@ const fxBridge = publishFxBridge(window, {
   myAccountAdapter,
 });
 
+initializeChangelogView();
 const savedVersion = localStorage.getItem("fx_version");
 if (savedVersion !== version && !fxBridge.isCustomLobbyVersion) {
   localStorage.setItem("fx_version", version);
