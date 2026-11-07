@@ -1,7 +1,7 @@
 import { defineComponent } from "vue/dist/vue.esm-bundler.js";
 
 export const MapHeader = defineComponent({
-  props: { map: String, mapImage: String, nextMap: String, nextTeamCountLabel: String, isContest: Boolean, nextIsContest: Boolean, noFullsend: Boolean, nextNoFullsend: Boolean, labels: Object, modes: Array, readyCount: Number, readyClans: Array, readyClanTotal: Number, teamCount: String, lobbyRating: Object, readyState: String, readyDisabled: Boolean },
+  props: { map: String, mapImage: String, nextMap: String, nextMapImage: String, nextTeamCountLabel: String, isContest: Boolean, nextIsContest: null, noFullsend: Boolean, nextNoFullsend: Boolean, labels: Object, modes: Array, readyCount: Number, readyClans: Array, readyClanTotal: Number, teamCount: String, lobbyRating: Object, readyState: String, readyDisabled: Boolean },
   emits: ["select-mode", "ready"],
   template: `
     <header class="fx-custom-lobby-top">
@@ -62,7 +62,13 @@ export const MapHeader = defineComponent({
           <button type="button" class="fx-custom-lobby-ready" :class="'is-' + readyState" :aria-pressed="readyState === 'ready'" :disabled="readyDisabled" @click="$emit('ready')">{{ labels.readyAction }}</button>
         </div>
       </section>
-      <article class="fx-custom-lobby-card fx-custom-lobby-next-card" :class="{ 'is-contest': nextIsContest }"><span>{{ labels.nextMap }}<b v-if="nextIsContest" class="fx-custom-lobby-contest-badge">🏆 CONTEST</b></span><strong>{{ nextMap || "-" }}</strong><small v-if="nextTeamCountLabel" class="fx-custom-lobby-next-teams">{{ nextTeamCountLabel }}</small><strong v-if="nextNoFullsend" class="fx-custom-lobby-rules-badge">NO FULLSEND</strong></article>
+      <article class="fx-custom-lobby-card fx-custom-lobby-next-card" :class="{ 'is-contest': nextIsContest === true, 'is-standard': nextIsContest === false }">
+        <img v-if="nextMapImage" class="fx-custom-lobby-next-image" :src="nextMapImage" alt="" aria-hidden="true">
+        <div class="fx-custom-lobby-next-heading"><span class="fx-custom-lobby-next-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg></span><span class="fx-custom-lobby-next-label">{{ labels.nextMap }}</span><b v-if="nextIsContest === true" class="fx-custom-lobby-contest-badge">CONTEST</b><b v-else-if="nextIsContest === false" class="fx-custom-lobby-next-standard">{{ labels.nextStandardGame }}</b><b v-else class="fx-custom-lobby-next-unknown">{{ labels.nextContestUnknown }}</b></div>
+        <strong class="fx-custom-lobby-next-title">{{ nextMap || "-" }}</strong>
+        <small v-if="nextTeamCountLabel" class="fx-custom-lobby-next-teams">{{ nextTeamCountLabel }}</small>
+        <strong v-if="nextNoFullsend" class="fx-custom-lobby-rules-badge">NO FULLSEND</strong>
+      </article>
       </div>
     </header>`,
 });
@@ -448,6 +454,7 @@ PlayerList.components = { LobbyChat };
 
 export const ClanOverview = defineComponent({
   props: { clan: String, readyCount: Number, memberCount: Number, members: Array, labels: Object },
+  emits: ["select-player"],
   template: `
     <aside class="fx-custom-lobby-side-panel">
       <article class="fx-custom-lobby-card fx-custom-lobby-clan-card">
@@ -459,7 +466,7 @@ export const ClanOverview = defineComponent({
             <span class="fx-custom-lobby-clan-ready-label">{{ labels.ready }}</span>
           </div>
         </header>
-        <div class="fx-custom-lobby-clan-members"><span v-for="player in members" :key="player.id || player.name" class="fx-custom-lobby-clan-member"><i class="fx-custom-lobby-status-dot" :class="'is-' + player.readiness"></i>{{ player.name }}</span></div>
+        <div class="fx-custom-lobby-clan-members"><button v-for="player in members" :key="player.id || player.name" type="button" class="fx-custom-lobby-clan-member" :title="player.title || player.name" :style="player.color ? { color: player.color } : null" @click.stop.prevent="$emit('select-player', player, $event)"><i class="fx-custom-lobby-status-dot" :class="'is-' + player.readiness"></i>{{ player.name }}</button></div>
       </article>
     </aside>`,
 });

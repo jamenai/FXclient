@@ -7,6 +7,7 @@ const EMPTY_SNAPSHOT = Object.freeze({
   currentMap: "",
   currentMapImage: "",
   nextMap: "",
+  nextMapImage: "",
   nextTeamCountLabel: "",
   readyCount: 0,
   playerCount: 0,
@@ -76,11 +77,14 @@ function normalizeSnapshot(snapshot, source, previousSnapshot = EMPTY_SNAPSHOT) 
       };
     }) : [],
     currentMap: String(snapshot?.currentMap ?? ""),
-    currentMapImage: String(snapshot?.currentMapImage ?? previousSnapshot?.currentMapImage ?? ""),
+    currentMapImage: String(snapshot?.currentMapImage
+      ?? (String(snapshot?.currentMap ?? "") === previousSnapshot?.currentMap ? previousSnapshot.currentMapImage : "") ?? ""),
     nextMap: String(snapshot?.nextMap ?? ""),
+    nextMapImage: String(snapshot?.nextMapImage
+      ?? (String(snapshot?.nextMap ?? "") === previousSnapshot?.nextMap ? previousSnapshot.nextMapImage : "") ?? ""),
     nextTeamCountLabel: String(snapshot?.nextTeamCountLabel ?? ""),
     isContest: snapshot?.isContest === true || snapshot?.modes?.find(mode => mode.active)?.isContest === true,
-    nextIsContest: snapshot?.nextIsContest === true,
+    nextIsContest: typeof snapshot?.nextIsContest === "boolean" ? snapshot.nextIsContest : null,
     noFullsend: snapshot?.noFullsend === true,
     nextNoFullsend: snapshot?.nextNoFullsend === true,
     readyCount,

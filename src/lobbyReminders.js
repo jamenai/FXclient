@@ -40,7 +40,6 @@ function getSelectedGame() {
         nextMap: room[dictionary.lobbyRoomNextMap],
         nextMode: room[dictionary.lobbyRoomNextMode],
         isContest: !!room[dictionary.lobbyRoomIsContest],
-        nextIsContest: false,
         chatLog: room[dictionary.lobbyRoomChatLog],
         chatId: room[dictionary.lobbyRoomChatId],
     };

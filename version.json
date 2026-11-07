@@ -1,9 +1,10 @@
 {
-    "version": "0.1.10",
-    "lastUpdated": "November 7",
+    "version": "0.1.11",
+    "lastUpdated": "November 7, 2026",
     "changes": [
-        "Render the update prompt as a top-layer Vue dialog",
-        "Show lobby notification senders with account colors and separate message text"
+        "Persist map previews for upcoming games in browser storage",
+        "Align icons in the compact sidebar",
+        "Improve lobby notifications and next-game details"
     ],
     "isSignificant": true
 }

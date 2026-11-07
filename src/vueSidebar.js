@@ -181,7 +181,7 @@ const VueSidebar = defineComponent({
         <button type="button" class="fx-sidebar-button fx-sidebar-mode-action" @click="setMode('hidden')">× <span>{{ t('sidebarModeHidden') }}</span></button>
       </div>
     </aside>
-    <button v-if="enabled && mode === 'hidden'" id="fx-sidebar-restore" type="button" @click="setMode('expanded')">›</button>` ,
+    <button v-if="enabled && mode === 'hidden'" id="fx-sidebar-restore" class="fx-vue-sidebar-restore" type="button" :aria-label="t('sidebarShow')" :title="t('sidebarShow')" @click="setMode('expanded')"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m4-10 3 2-3 2"/></svg><span>{{ t('sidebarShow') }}</span></button>` ,
   data() { return { version: versionData.version }; },
 });
 

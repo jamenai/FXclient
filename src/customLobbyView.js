@@ -10,6 +10,91 @@ import { ClanOverview, LobbyProgress, MapHeader, PlayerList } from "./lobbyCompo
 const APP_ID = "fx-app-mount";
 const LOBBY_VIEW_MIGRATION_KEY = "fx_custom_lobby_view_enabled_v1";
 const lastDiagnostic = new Map();
+const mapImageCache = new Map();
+const MAP_IMAGE_CACHE_LIMIT = 20;
+const MAP_IMAGE_DB_NAME = "zfx-client-cache";
+const MAP_IMAGE_DB_STORE = "map-images";
+let mapImageCacheReady = false;
+let mapImageDbPromise;
+
+function mapImageCacheKey(mapName) {
+  return String(mapName ?? "").trim().normalize("NFKC").toLocaleLowerCase();
+}
+
+function rememberMapImage(mapName, image) {
+  const key = mapImageCacheKey(mapName);
+  if (!key || !image || !isSafeMapImageUrl(image)) return;
+  if (mapImageCache.has(key)) return;
+  mapImageCache.delete(key);
+  mapImageCache.set(key, image);
+  while (mapImageCache.size > MAP_IMAGE_CACHE_LIMIT) {
+    mapImageCache.delete(mapImageCache.keys().next().value);
+  }
+  void persistMapImage(key, image);
+}
+
+function openMapImageDb() {
+  if (!("indexedDB" in window)) return Promise.resolve(null);
+  if (!mapImageDbPromise) {
+    mapImageDbPromise = new Promise(resolve => {
+      const request = indexedDB.open(MAP_IMAGE_DB_NAME, 1);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains(MAP_IMAGE_DB_STORE)) {
+          database.createObjectStore(MAP_IMAGE_DB_STORE, { keyPath: "key" });
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+      request.onblocked = () => resolve(null);
+    });
+  }
+  return mapImageDbPromise;
+}
+
+async function persistMapImage(key, image) {
+  try {
+    const database = await openMapImageDb();
+    if (!database) return;
+    const transaction = database.transaction(MAP_IMAGE_DB_STORE, "readwrite");
+    const store = transaction.objectStore(MAP_IMAGE_DB_STORE);
+    store.put({ key, image, savedAt: Date.now() });
+    const records = await new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+    records.sort((left, right) => left.savedAt - right.savedAt);
+    for (const record of records.slice(0, Math.max(0, records.length - MAP_IMAGE_CACHE_LIMIT))) {
+      store.delete(record.key);
+    }
+  } catch {
+    // Keep the in-memory cache available if browser storage is unavailable.
+  }
+}
+
+async function loadPersistentMapImages() {
+  if (mapImageCacheReady) return;
+  mapImageCacheReady = true;
+  try {
+    const database = await openMapImageDb();
+    if (!database) return;
+    const records = await new Promise((resolve, reject) => {
+      const request = database.transaction(MAP_IMAGE_DB_STORE, "readonly")
+        .objectStore(MAP_IMAGE_DB_STORE).getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+    records.sort((left, right) => left.savedAt - right.savedAt);
+    for (const record of records.slice(-MAP_IMAGE_CACHE_LIMIT)) {
+      if (record?.key && record?.image && isSafeMapImageUrl(record.image) && !mapImageCache.has(record.key)) {
+        mapImageCache.set(record.key, record.image);
+      }
+    }
+  } catch {
+    // The lobby can still use images captured during this page session.
+  }
+}
 
 function logLobbyDiagnostic(stage, signature, details) {
   if (lastDiagnostic.get(stage) === signature) return;
@@ -65,6 +150,7 @@ function resolveLobbyChatSegments(text) {
 
 function formatLobbyNotification(text) {
   const source = String(text ?? "").trim();
+  const isFollowerNotice = /\b(?:are|is)\s+in\s+the\s+lobby\b|\bjoined\s+the\s+lobby\b|\b(?:sind|ist)\s+in\s+der\s+lobby\b/i.test(source);
   const senderMatch = source.match(/^@([a-zA-Z0-9_-]{5})(?::\s*|\s+|$)([\s\S]*)$/);
   if (senderMatch) {
     const senderName = window.__fx?.resolveLobbyChatMention?.(senderMatch[1]);
@@ -72,11 +158,12 @@ function formatLobbyNotification(text) {
       return {
         senderName,
         senderColor: window.__fx?.resolveLobbyChatMentionColor?.(senderMatch[1]) || "",
-        body: senderMatch[2].trim(),
+        body: resolveLobbyChatMentions(senderMatch[2].trim()),
+        kind: isFollowerNotice ? "followers" : "default",
       };
     }
   }
-  return { senderName: "", senderColor: "", body: resolveLobbyChatMentions(source) };
+  return { senderName: "", senderColor: "", body: resolveLobbyChatMentions(source), kind: isFollowerNotice ? "followers" : "default" };
 }
 
 function getLobbyList(scope) {
@@ -95,13 +182,14 @@ function getLobbyList(scope) {
 function getLobbyRoot(list) {
   let root = list.parentElement;
   for (let depth = 0; root?.parentElement && depth < 2; depth++) root = root.parentElement;
-  return root;
+  return root && root.contains(list) ? root : null;
 }
 
 function findLobbyRoot(scope) {
   const modeTab = scope.querySelector(".fx-lobby-mode-tab");
   for (let candidate = modeTab; candidate && candidate !== scope; candidate = candidate.parentElement) {
-    if (candidate.children.length === 7 && candidate.children[1]?.contains(modeTab) && candidate.children[6]) return candidate;
+    const modeTabCount = candidate.querySelectorAll(".fx-lobby-mode-tab").length;
+    if (candidate.children.length >= 4 && modeTabCount >= 2) return candidate;
   }
   return null;
 }
@@ -301,8 +389,8 @@ function isSafeMapImageUrl(value) {
   return /^(https?:|blob:|data:image\/)/i.test(value);
 }
 
-const getLobbyLabels = () => {
-  const selectedLanguage = window.__fx?.getGameLanguage?.() || navigator.language || "en";
+const getLobbyLabels = (language = window.__fx?.getGameLanguage?.() || "en") => {
+  const selectedLanguage = String(language || "en");
   const german = selectedLanguage.toLowerCase().startsWith("de");
   return german ? {
     title: "Lobby-Übersicht", currentMap: "Aktuelle Karte", nextMap: "Nächstes Spiel", modes: "Spielmodi", clans: "Clans",
@@ -371,6 +459,20 @@ const LobbyView = defineComponent({
     const notificationIndex = ref(-1);
     const notificationPanelOpen = ref(false);
     const currentLobbyNotification = computed(() => lobbyNotifications.value[notificationIndex.value] ?? null);
+    function refreshLobbyLanguage(language = window.__fx?.getGameLanguage?.() || "en") {
+      const german = String(language || "en").toLowerCase().startsWith("de");
+      Object.assign(labels, getLobbyLabels(language));
+      labels.followers = german ? "GEFOLGTE SPIELER" : "FOLLOWED PLAYERS";
+      labels.nextContestUnknown = german ? "CONTEST-STATUS UNBEKANNT" : "CONTEST STATUS UNKNOWN";
+      labels.nextStandardGame = german ? "NORMALES SPIEL" : "STANDARD GAME";
+      labels.lobbyCategory = "LOBBY";
+      labels.noticeCategory = german ? "HINWEIS" : "NOTICE";
+      lobbyNotifications.value = lobbyNotifications.value.map(notification => ({
+        ...notification,
+        category: labels[notification.categoryKey] || notification.category,
+      }));
+    }
+    refreshLobbyLanguage();
     const activeTab = ref("overview");
     const playerContextMenu = ref(null);
     const playerListComponent = ref(null);
@@ -380,14 +482,21 @@ const LobbyView = defineComponent({
     let nativeNotificationObserver = null;
     const hiddenNativeNotifications = new Map();
     const hideNativeNotificationOverlays = () => {
-      for (const element of document.body.children) {
-        const style = element.style;
-        const isNativeOverlay = element.tagName === "DIV"
-          && style.position === "absolute"
-          && style.right === "0px"
-          && style.top === "0px"
-          && style.zIndex === "3"
-          && (element.children.length === 5 || (element.children.length === 0 && /^\\d+$/.test(element.textContent.trim())));
+      for (const element of document.body.querySelectorAll("div")) {
+        if (element.closest(`#${APP_ID}, #fx-sidebar, #fx-propaganda-overlay`)) continue;
+        const inlineStyle = element.style;
+        const computedStyle = getComputedStyle(element);
+        const position = inlineStyle.position || computedStyle.position;
+        const right = inlineStyle.right || computedStyle.right;
+        const top = inlineStyle.top || computedStyle.top;
+        const zIndex = Number(inlineStyle.zIndex || computedStyle.zIndex);
+        const looksLikeNotification = element.children.length >= 3
+          || (element.children.length === 0 && /^\\d+$/.test(element.textContent.trim()));
+        const isNativeOverlay = (position === "absolute" || position === "fixed")
+          && right === "0px"
+          && top === "0px"
+          && Number.isFinite(zIndex) && zIndex >= 0 && zIndex <= 10
+          && looksLikeNotification;
         if (isNativeOverlay && !hiddenNativeNotifications.has(element)) {
           hiddenNativeNotifications.set(element, element.style.display);
           element.style.display = "none";
@@ -398,11 +507,11 @@ const LobbyView = defineComponent({
       Number(window.__fx?.settings?.lobbyFontScale ?? 100) / 100)));
     watch(active, isActive => {
       if (isActive) {
-        Object.assign(labels, getLobbyLabels());
+        refreshLobbyLanguage();
         requestAnimationFrame(() => {
           hideNativeNotificationOverlays();
           nativeNotificationObserver = new MutationObserver(hideNativeNotificationOverlays);
-          nativeNotificationObserver.observe(document.body, { childList: true });
+          nativeNotificationObserver.observe(document.body, { childList: true, subtree: true });
         });
       } else {
         nativeNotificationObserver?.disconnect();
@@ -617,7 +726,7 @@ const LobbyView = defineComponent({
         missingLobbyTimer = 0;
       }
       const root = getLobbyRoot(found.element);
-      if (!root || !root.children[6]) {
+      if (!root || root === shell || !root.contains(found.element)) {
         logLobbyDiagnostic("lobby-root-invalid", `${Boolean(root)}:${root?.children?.length ?? 0}`, {
           rootFound: Boolean(root),
           rootChildren: root?.children?.length ?? 0,
@@ -644,13 +753,14 @@ const LobbyView = defineComponent({
         const name = row.dataset.fxAccountName || rawText.replace(/^[🟢⚪]\s*/u, "");
         if (!row.dataset.fxLobbyPlayer) row.dataset.fxLobbyPlayer = "true";
         if (!row.dataset.fxAccountName) row.dataset.fxAccountName = name;
+        const senderId = window.__fx?.getLobbyChatSenderIdByName?.(name) ?? null;
         if (!row.dataset.fxLobbyReady) {
           row.dataset.fxLobbyReady = /^[🟢]/u.test(rawText) ? "ready"
             : /^[⚪]/u.test(rawText) ? "not-ready" : "unknown";
         }
         return {
           id: row.dataset.fxPlayerId || `${name}-${index}`,
-          senderId: window.__fx?.getLobbyChatSenderIdByName?.(name) ?? null,
+          senderId,
           name,
           clan: getPlayerClan(name),
           readiness: row.dataset.fxLobbyReady || "unknown",
@@ -660,7 +770,7 @@ const LobbyView = defineComponent({
           self: row.dataset.fxSelf === "true"
             || (typeof ownPlayerName === "string"
               && ownPlayerName.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase()),
-          color: row.style.color,
+          color: window.__fx?.getLobbyChatSenderColor?.(senderId) || row.style.color,
           title: row.title,
           nativeElement: row,
         };
@@ -682,6 +792,7 @@ const LobbyView = defineComponent({
     }
 
     function readNativeSummary(root, snapshot) {
+      void loadPersistentMapImages();
       const enhancedModes = Array.from(root.querySelectorAll(".fx-lobby-mode-tab"));
       const modeButtons = enhancedModes.length ? enhancedModes
         : Array.from(root.children[1]?.querySelectorAll("button") ?? []);
@@ -745,11 +856,16 @@ const LobbyView = defineComponent({
       const nextMap = Number.isInteger(roomNextMap) ? window.__fx?.getGameMapNames?.()?.[roomNextMap] || "" : mapNames[1] || snapshot?.nextMap || "";
       const nextTeamCountLabel = Number.isInteger(roomNextMode) && roomNextMode >= 0 && roomNextMode <= 6 ? `${roomNextMode + 2} Teams` : "";
       const isContest = selectedMode?.isContest === true || room?.isContest === true;
-      const nextIsContest = room?.nextIsContest === true;
+      const nextIsContest = typeof room?.nextIsContest === "boolean" ? room.nextIsContest : null;
       const noFullsend = roomMode === 10;
       const nextNoFullsend = roomNextMode === 10;
-      const currentMapImage = snapshot?.currentMap === currentMap && snapshot?.currentMapImage
-        ? snapshot.currentMapImage : findMapImage(root) || snapshot?.currentMapImage || "";
+      const capturedMapImage = findMapImage(root);
+      const currentMapImage = capturedMapImage
+        || (snapshot?.currentMap === currentMap ? snapshot?.currentMapImage : "")
+        || mapImageCache.get(mapImageCacheKey(currentMap)) || "";
+      if (currentMapImage) rememberMapImage(currentMap, currentMapImage);
+      const nextMapImage = mapImageCache.get(mapImageCacheKey(nextMap))
+        || (mapImageCacheKey(nextMap) === mapImageCacheKey(currentMap) ? currentMapImage : "");
       const progressText = cleanText(root.children[5]);
       const progressMatch = progressText.match(/(\d+(?:[.,]\d+)?)\s*%/);
       const readinessTexts = [progressText,
@@ -767,6 +883,7 @@ const LobbyView = defineComponent({
         currentMap,
         currentMapImage,
         nextMap,
+        nextMapImage,
         chatMessages: roomChatMessages,
         isContest,
         nextIsContest,
@@ -850,6 +967,7 @@ const LobbyView = defineComponent({
       playerContextMenu.value = {
         senderId: player.senderId,
         senderName: player.name,
+        senderColor: player.color || "",
         x: Math.max(8, Math.min(event?.clientX ?? 8, window.innerWidth - 176)),
         y: Math.max(8, Math.min(event?.clientY ?? 8, window.innerHeight - 54)),
       };
@@ -893,19 +1011,28 @@ const LobbyView = defineComponent({
       if (!text) return;
       const presentation = formatLobbyNotification(text);
       const sourceIndex = Number.isInteger(event.detail?.index) ? event.detail.index : null;
-      const id = sourceIndex === null ? `${Date.now()}:${Math.random().toString(36).slice(2)}` : `native:${sourceIndex}`;
+      const id = sourceIndex !== null && sourceIndex >= 0
+        ? `native:${sourceIndex}` : `${Date.now()}:${Math.random().toString(36).slice(2)}`;
       const existingIndex = lobbyNotifications.value.findIndex(item => item.id === id);
       if (existingIndex >= 0) {
-        lobbyNotifications.value[existingIndex] = { ...lobbyNotifications.value[existingIndex], text, ...presentation };
+        const categoryKey = presentation.kind === "followers" ? "followers"
+          : Number(event.detail?.id) === 7 ? "lobbyCategory" : "noticeCategory";
+        lobbyNotifications.value[existingIndex] = {
+          ...lobbyNotifications.value[existingIndex], text, ...presentation,
+          categoryKey, category: labels[categoryKey],
+        };
         notificationIndex.value = existingIndex;
         notificationPanelOpen.value = true;
         return;
       }
+      const categoryKey = presentation.kind === "followers" ? "followers"
+        : Number(event.detail?.id) === 7 ? "lobbyCategory" : "noticeCategory";
       const nextNotifications = [...lobbyNotifications.value, {
         id,
         text,
         ...presentation,
-        category: Number(event.detail?.id) === 7 ? "Lobby" : "Hinweis",
+        categoryKey,
+        category: labels[categoryKey],
       }];
       while (nextNotifications.length > 100) nextNotifications.shift();
       lobbyNotifications.value = nextNotifications;
@@ -1062,18 +1189,30 @@ const LobbyView = defineComponent({
       }
     }
 
+    function handleGameLanguageChange(event) {
+      refreshLobbyLanguage(event.detail?.language);
+    }
+
     onMounted(() => {
       console.log("[ZFX Client LobbyView] Vue route mounted; waiting for native lobby data.");
       window.addEventListener("fx-lobby-notification", handleLobbyNotification);
+      window.addEventListener("fx-game-language-change", handleGameLanguageChange);
       const nativeHistory = window.__fx?.getLobbyNotificationHistory?.() ?? [];
       lobbyNotifications.value = nativeHistory.filter(item => item && item.id !== 6 && item.text)
         .slice(-100)
-        .map(item => ({
-          id: `native:${item.index}`,
-          text: String(item.text ?? "").trim(),
-          ...formatLobbyNotification(item.text),
-          category: Number(item.id) === 7 ? "Lobby" : "Hinweis",
-        }));
+        .map(item => {
+          const presentation = formatLobbyNotification(item.text);
+          const categoryKey = presentation.kind === "followers" ? "followers"
+            : Number(item.id) === 7 ? "lobbyCategory" : "noticeCategory";
+          return {
+            id: `native:${item.index}`,
+            text: String(item.text ?? "").trim(),
+            ...presentation,
+            categoryKey,
+            category: labels[categoryKey],
+          };
+        });
+      refreshLobbyLanguage();
       notificationIndex.value = lobbyNotifications.value.length - 1;
       notificationPanelOpen.value = lobbyNotifications.value.length > 0;
       unsubscribe = adapter.subscribe(value => {
@@ -1131,6 +1270,7 @@ const LobbyView = defineComponent({
       window.removeEventListener("fx-bot-protection-state", handleBotProtectionState);
       window.removeEventListener("fx-native-lobby-return", handleNativeLobbyReturn);
       window.removeEventListener("fx-lobby-notification", handleLobbyNotification);
+      window.removeEventListener("fx-game-language-change", handleGameLanguageChange);
       unsubscribe();
       unsubscribeLobbyChat();
       restoreNativeRoot();
@@ -1176,7 +1316,7 @@ const LobbyView = defineComponent({
           <button type="button" :disabled="notificationIndex >= lobbyNotifications.length - 1" aria-label="Nächste Meldung" @click="nextLobbyNotification">▶</button>
           <button type="button" aria-label="Meldung schließen" @click="notificationPanelOpen = false">×</button>
         </div>
-        <article class="fx-lobby-notification">
+        <article class="fx-lobby-notification" :class="{ 'is-followers': currentLobbyNotification.kind === 'followers' }">
           <span class="fx-lobby-notification-category">{{ currentLobbyNotification.category }}</span>
           <strong v-if="currentLobbyNotification.senderName" class="fx-lobby-notification-sender" :style="currentLobbyNotification.senderColor ? { color: currentLobbyNotification.senderColor } : null">{{ currentLobbyNotification.senderName }}</strong>
           <p>{{ currentLobbyNotification.body || currentLobbyNotification.text }}</p>
@@ -1184,16 +1324,16 @@ const LobbyView = defineComponent({
       </aside>
       <div v-if="playerContextMenu" class="fx-custom-lobby-chat-menu-backdrop" @click="playerContextMenu = null" @keydown.esc="playerContextMenu = null">
         <div class="fx-custom-lobby-chat-context-menu" role="menu" :style="{ left: playerContextMenu.x + 'px', top: playerContextMenu.y + 'px' }" @click.stop>
-          <strong>{{ playerContextMenu.senderName }}</strong>
+          <strong :style="playerContextMenu.senderColor ? { color: playerContextMenu.senderColor } : null">{{ playerContextMenu.senderName }}</strong>
           <button type="button" role="menuitem" @click="mentionPlayerFromContextMenu">@ {{ labels.mention }}</button>
         </div>
       </div>
       </Teleport>
-      <MapHeader :map="snapshot.currentMap" :map-image="snapshot.currentMapImage" :next-map="snapshot.nextMap" :next-team-count-label="snapshot.nextTeamCountLabel" :is-contest="snapshot.isContest" :next-is-contest="snapshot.nextIsContest" :no-fullsend="snapshot.noFullsend" :next-no-fullsend="snapshot.nextNoFullsend" :labels="labels" :modes="snapshot.modes" :ready-count="snapshot.readyCount" :ready-clans="readyClanSlices" :ready-clan-total="readyClanTotal" :team-count="activeMode?.teamCountLabel || ''" :lobby-rating="lobbyRating" :ready-state="selfReadiness" :ready-disabled="!snapshot.playerCount" @select-mode="selectMode" @ready="setReady" />
+      <MapHeader :map="snapshot.currentMap" :map-image="snapshot.currentMapImage" :next-map="snapshot.nextMap" :next-map-image="snapshot.nextMapImage" :next-team-count-label="snapshot.nextTeamCountLabel" :is-contest="snapshot.isContest" :next-is-contest="snapshot.nextIsContest" :no-fullsend="snapshot.noFullsend" :next-no-fullsend="snapshot.nextNoFullsend" :labels="labels" :modes="snapshot.modes" :ready-count="snapshot.readyCount" :ready-clans="readyClanSlices" :ready-clan-total="readyClanTotal" :team-count="activeMode?.teamCountLabel || ''" :lobby-rating="lobbyRating" :ready-state="selfReadiness" :ready-disabled="!snapshot.playerCount" @select-mode="selectMode" @ready="setReady" />
       <LobbyProgress :snapshot="snapshot" :labels="labels" />
       <main class="fx-custom-lobby-content">
         <PlayerList ref="playerListComponent" :players="filteredPlayers" :all-players="snapshot.players" :clans="visibleClanGroups" :labels="labels" :count="snapshot.playerCount" :player-count-label="playerCountLabel" :query="query" :sort-by="sortBy" :ready-filter="readyFilter" :affiliation-filter="affiliationFilter" :active-tab="activeTab" :chat-messages="snapshot.chatMessages" :chat-status="chatStatus" :team-mode="isTeamMode" :team-players="filteredTeamPlayers" :team-clan="ownClan" :team-count="teamCount" :clan-count="clanCount" :top-ready-clan="topReadyClan" :only-ready-clans="onlyReadyClans" :current-map="snapshot.currentMap" :next-map="snapshot.nextMap" :next-team-count="snapshot.nextTeamCountLabel" @update:query="query = $event" @update:sort="setSort" @update:ready-filter="setReadyFilter" @update:affiliation-filter="setAffiliationFilter" @reset-filter-groups="resetFilterGroups" @reset-filters="resetFilters" @filter-ready-clans="onlyReadyClans = $event" @select-player="selectPlayer" @select-tab="selectLobbyTab" @send-chat="sendChat" @send-call="sendCall" @send-join="sendJoin" @send-team-message="sendTeamMessage" />
-        <ClanOverview :clan="ownClan" :ready-count="clanReadyCount" :member-count="clanPlayers.length" :members="clanPlayers.slice(0, 8)" :labels="labels" />
+        <ClanOverview :clan="ownClan" :ready-count="clanReadyCount" :member-count="clanPlayers.length" :members="clanPlayers" :labels="labels" @select-player="selectPlayer" />
       </main>
     </section>`,
 });

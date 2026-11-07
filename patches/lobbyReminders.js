@@ -19,6 +19,21 @@ export default definePatch(({ matchCode, insertCode, modifyCode, matchRawCode, r
         `var sC=bq.lj.tT(aG2,bq.lj.tU(aG2));if(window.__fx)window.__fx.getLobbyNotificationHistory=function(){return bq.message.aGG().map(function(notification,index){return {index:index,id:notification.id,text:bq.lj.tT(notification,bq.lj.tU(notification)).s};});};if(aG2.id!==6&&sC)window.dispatchEvent(new CustomEvent("fx-lobby-notification",{detail:{id:aG2.id,index:bq.message.aGG().indexOf(aG2),text:sC.s}}));`
     );
 
+    // The original message manager renders its notification corner directly.
+    // Keep the queue intact for Vue, but close both native notification panels
+    // whenever the custom lobby is active.
+    const nativeLobbyNotification = `window.__fx&&window.__fx.settings&&window.__fx.settings.customLobbyView===true&&window.__fx.getGameVar("gameState")!==1`;
+    replaceRawCode(
+        `aH3.show(aH4[aH5]);`,
+        `(${nativeLobbyNotification})?(aH3.vx(),aH3=null):aH3.show(aH4[aH5]);`,
+        { aH3: "aH3", aH4: "aH4", aH5: "aH5" }
+    );
+    replaceRawCode(
+        `aH3.show();`,
+        `(${nativeLobbyNotification})?(aH3.vx(),aH3=null):aH3.show();`,
+        { aH3: "aH3", show: "show" }
+    );
+
     // Tap only the incoming room-chat packet parser. The surrounding room lookup,
     // chat-id update and room refresh make this push unique to socket room chat.
     waitForMinification(() => replaceOne(
