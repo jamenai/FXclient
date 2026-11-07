@@ -1,7 +1,7 @@
 import { definePatch, insert } from "../modUtils.js"
 import { styleText } from "node:util";
 
-export default definePatch(({ insertCode, modifyCode, replaceCode, replaceRawCode }) => {
+export default definePatch(({ insertCode, modifyCode, replaceCode, replaceRawCode, matchOne, replaceOne }) => {
 
   // Display tick number near the moving bars in the balance box
   modifyCode(`zH.fillStyle = eh === 9 ? bD.pD : bD.o5;
@@ -37,6 +37,14 @@ export default definePatch(({ insertCode, modifyCode, replaceCode, replaceRawCod
     (new ea()).show(eS.eb, eS.colors, eS.id);
     eS = null;
     return true;`, `if (__fx.settings.hidePropagandaPopup) return;`)
+  const propagandaShowPattern = /\(new (?<dialogClass>\w+)\(\)\)\.(?<showMethod>\w+)\(\s*(?<messageState>\w+)\.(?<messageKey>\w+)\s*,\s*\k<messageState>\.(?<colorsKey>\w+)\s*,\s*\k<messageState>\.(?<idKey>\w+)\s*\)/g;
+  const { groups: propagandaShow } = matchOne(propagandaShowPattern);
+  const propagandaAckPattern = /if\((?<idArg>\w+)>=0\)\{if\((?<manager>\w+)\.(?<socketManager>\w+)\.(?<socketActiveMethod>\w+)\(0\)\)\{\k<manager>\.(?<messageManager>\w+)\.(?<ackMethod>\w+)\(0,\k<idArg>\)\}\}/g;
+  const { groups: propagandaAck } = matchOne(propagandaAckPattern);
+  replaceOne(
+    propagandaShowPattern,
+    `window.__fx?.showPropagandaInVue?.(${propagandaShow.messageState}.${propagandaShow.messageKey},${propagandaShow.messageState}.${propagandaShow.colorsKey},${propagandaShow.messageState}.${propagandaShow.idKey})===true?(0<=${propagandaShow.messageState}.${propagandaShow.idKey}&&${propagandaAck.manager}.${propagandaAck.socketManager}.${propagandaAck.socketActiveMethod}(0)&&${propagandaAck.manager}.${propagandaAck.messageManager}.${propagandaAck.ackMethod}(0,${propagandaShow.messageState}.${propagandaShow.idKey}),void 0):(new ${propagandaShow.dialogClass}).${propagandaShow.showMethod}(${propagandaShow.messageState}.${propagandaShow.messageKey},${propagandaShow.messageState}.${propagandaShow.colorsKey},${propagandaShow.messageState}.${propagandaShow.idKey})`,
+  );
   modifyCode(`if (!a.b.c(0)) {
 			d = e.f + 1000 * 1;
 			return;

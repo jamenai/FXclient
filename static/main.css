@@ -101,6 +101,31 @@ body:has(#fx-custom-lobby-view) #fx-propaganda-overlay {
 	isolation: isolate;
 }
 
+.fx-lobby-propaganda-dialog {
+	position: fixed;
+	inset: 0;
+	box-sizing: border-box;
+	width: min(620px, calc(100vw - 32px));
+	max-width: none;
+	max-height: min(78vh, 720px);
+	margin: auto;
+	padding: 0;
+	border: 1px solid rgba(107, 205, 172, .48);
+	border-radius: 16px;
+	background: var(--fx-propaganda-card, linear-gradient(150deg, #102b3b, #081723 76%));
+	color: #edf8ff;
+	font: inherit;
+	box-shadow: 0 24px 90px rgba(0, 0, 0, .78), 0 0 36px rgba(47, 221, 155, .16);
+	z-index: 2147483647;
+}
+.fx-lobby-propaganda-dialog[open] { display: flex; flex-direction: column; }
+.fx-lobby-propaganda-dialog::backdrop { background: var(--fx-propaganda-backdrop, rgba(1, 5, 12, .78)); backdrop-filter: blur(5px); }
+.fx-lobby-propaganda-dialog header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(143, 184, 209, .18); background: var(--fx-propaganda-header, #102b3b); color: var(--fx-propaganda-title, #7de4b6); font-size: .78em; font-weight: 850; letter-spacing: .14em; }
+.fx-lobby-propaganda-dialog header button { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid rgba(143, 184, 209, .2); border-radius: 8px; background: rgba(4, 15, 24, .62); color: var(--fx-propaganda-button-text, #d9eaf4); font: inherit; font-size: 1.3em; cursor: pointer; }
+.fx-lobby-propaganda-dialog p { overflow: auto; flex: 1 1 auto; min-height: 60px; margin: 0; padding: 22px; background: var(--fx-propaganda-card, #081723); color: var(--fx-propaganda-text, #f0f7fb); font-size: clamp(16px, 2vw, 21px); line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fx-lobby-propaganda-dialog footer { display: flex; justify-content: flex-end; padding: 12px 18px; border-top: 1px solid rgba(143, 184, 212, .18); background: var(--fx-propaganda-footer, #102b3b); }
+.fx-lobby-propaganda-dialog footer button { min-width: 100px; min-height: 38px; padding: 8px 14px; border: 1px solid rgba(255, 255, 255, .2); border-radius: 9px; background: var(--fx-propaganda-button, #177a58); color: var(--fx-propaganda-button-text, #f0fff7); font: inherit; font-weight: 750; cursor: pointer; }
+
 .window button,
 .window input,
 .window select {

@@ -1,10 +1,10 @@
 {
-    "version": "0.1.11",
+    "version": "0.1.12",
     "lastUpdated": "November 7, 2026",
     "changes": [
-        "Persist map previews for upcoming games in browser storage",
-        "Align icons in the compact sidebar",
-        "Improve lobby notifications and next-game details"
+        "Show propaganda messages in a Vue top-layer dialog with their original colors",
+        "Recover existing native propaganda popups into the Vue dialog",
+        "Improve lobby return routing and notification initialization"
     ],
     "isSignificant": true
 }

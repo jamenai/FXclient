@@ -412,7 +412,7 @@ const getLobbyLabels = (language = window.__fx?.getGameLanguage?.() || "en") => 
     spawnCallHint: "Wähle einen Kartenbereich. Dein Clan erhält den Call im Lobby-Chat.", spawnDirections: "Spawn-Bereich auswählen",
     topLeft: "Oben links", top: "Oben", topRight: "Oben rechts", left: "Links", center: "Mitte", right: "Rechts", bottomLeft: "Unten links", bottom: "Unten", bottomRight: "Unten rechts",
     send: "Senden", readyAction: "Bereit",
-    chatEmpty: "Noch keine Nachrichten", mention: "Erwähnen",
+    chatEmpty: "Noch keine Nachrichten", mention: "Erwähnen", dismiss: "Schließen",
     playersCount: "Spieler", noClan: "Kein eigener Clan erkannt", lobbyUnavailable: "Lobby wird geladen …",
     chatUnavailable: "Lobby-Chat konnte nicht geöffnet werden",
   } : {
@@ -435,7 +435,7 @@ const getLobbyLabels = (language = window.__fx?.getGameLanguage?.() || "en") => 
     spawnCallHint: "Choose an area of the map. Your clan will receive the call in lobby chat.", spawnDirections: "Choose spawn area",
     topLeft: "Top left", top: "Top", topRight: "Top right", left: "Left", center: "Center", right: "Right", bottomLeft: "Bottom left", bottom: "Bottom", bottomRight: "Bottom right",
     send: "Send", readyAction: "Ready",
-    chatEmpty: "No messages yet", mention: "Mention",
+    chatEmpty: "No messages yet", mention: "Mention", dismiss: "Close",
     playersCount: "Players", noClan: "No own clan detected", lobbyUnavailable: "Loading lobby …",
     chatUnavailable: "Could not open lobby chat",
   };
@@ -459,6 +459,88 @@ const LobbyView = defineComponent({
     const notificationIndex = ref(-1);
     const notificationPanelOpen = ref(false);
     const currentLobbyNotification = computed(() => lobbyNotifications.value[notificationIndex.value] ?? null);
+    const propagandaDialog = ref(null);
+    const propagandaMessage = shallowRef(null);
+    let nativePropagandaObserver = null;
+
+    function propagandaRgb(colors, index, fallback) {
+      const color = Array.isArray(colors) ? colors[index] : null;
+      if (!Array.isArray(color) || color.length < 3) return fallback;
+      const channels = color.slice(0, 3).map(channel => {
+        const value = Number(channel);
+        return Number.isFinite(value) ? Math.round(Math.max(0, Math.min(1, value)) * 255) : null;
+      });
+      return channels.every(channel => channel !== null) ? `rgb(${channels.join(", ")})` : fallback;
+    }
+
+    function propagandaTheme(colors) {
+      const backdrop = propagandaRgb(colors, 0, "rgb(1, 5, 12)").replace(/^rgb\((.*)\)$/, "rgba($1, .78)");
+      return {
+        "--fx-propaganda-backdrop": backdrop,
+        "--fx-propaganda-card": propagandaRgb(colors, 2, "#081723"),
+        "--fx-propaganda-header": propagandaRgb(colors, 1, "#102b3b"),
+        "--fx-propaganda-title": propagandaRgb(colors, 7, "#7de4b6"),
+        "--fx-propaganda-text": propagandaRgb(colors, 8, "#f0f7fb"),
+        "--fx-propaganda-footer": propagandaRgb(colors, 3, "#102b3b"),
+        "--fx-propaganda-button": propagandaRgb(colors, 4, "#177a58"),
+        "--fx-propaganda-button-text": propagandaRgb(colors, 9, "#f0fff7"),
+      };
+    }
+
+    function closePropagandaMessage() {
+      propagandaMessage.value = null;
+      if (propagandaDialog.value?.open) propagandaDialog.value.close();
+    }
+
+    function showPropagandaInVue(message, colors, id, suppliedTheme = null) {
+      if (window.__fx?.settings?.customLobbyView !== true) return false;
+      propagandaMessage.value = {
+        text: String(message ?? "").trim(),
+        id: Number(id),
+        style: suppliedTheme || propagandaTheme(colors),
+      };
+      nextTick(() => {
+        if (propagandaMessage.value && propagandaDialog.value && !propagandaDialog.value.open) {
+          propagandaDialog.value.showModal();
+        }
+      });
+      return true;
+    }
+
+    function migrateNativePropaganda() {
+      for (const overlay of document.querySelectorAll("#fx-propaganda-overlay")) {
+        if (overlay.dataset.fxVueHandoff === "true") continue;
+        const panel = overlay.firstElementChild;
+        const header = panel?.children?.[0];
+        const messageBody = panel?.children?.[1];
+        const footer = panel?.children?.[2];
+        if (!messageBody) continue;
+        const messageClone = messageBody.cloneNode(true);
+        messageClone.querySelectorAll("style").forEach(style => style.remove());
+        const messageText = String(messageClone.innerText || messageClone.textContent || "").trim();
+        if (!messageText) continue;
+        const closeButton = footer?.querySelector("button");
+        const cssValue = (element, property, fallback) => element
+          ? getComputedStyle(element).getPropertyValue(property).trim() || fallback
+          : fallback;
+        const suppliedTheme = {
+          "--fx-propaganda-backdrop": cssValue(overlay, "background-color", "rgba(1, 5, 12, .78)"),
+          "--fx-propaganda-card": cssValue(messageBody, "background-color", "#081723"),
+          "--fx-propaganda-header": cssValue(header, "background-color", "#102b3b"),
+          "--fx-propaganda-title": cssValue(header, "color", "#7de4b6"),
+          "--fx-propaganda-text": cssValue(messageBody, "color", "#f0f7fb"),
+          "--fx-propaganda-footer": cssValue(footer, "background-color", "#102b3b"),
+          "--fx-propaganda-button": cssValue(closeButton, "background-color", "#177a58"),
+          "--fx-propaganda-button-text": cssValue(closeButton, "color", "#f0fff7"),
+        };
+        if (showPropagandaInVue(messageText, null, -1, suppliedTheme)) {
+          overlay.dataset.fxVueHandoff = "true";
+          overlay.remove();
+        }
+      }
+    }
+
+    window.__fx.showPropagandaInVue = showPropagandaInVue;
     function refreshLobbyLanguage(language = window.__fx?.getGameLanguage?.() || "en") {
       const german = String(language || "en").toLowerCase().startsWith("de");
       Object.assign(labels, getLobbyLabels(language));
@@ -1195,9 +1277,18 @@ const LobbyView = defineComponent({
 
     onMounted(() => {
       console.log("[ZFX Client LobbyView] Vue route mounted; waiting for native lobby data.");
+      nativePropagandaObserver = new MutationObserver(migrateNativePropaganda);
+      nativePropagandaObserver.observe(document.body, { childList: true, subtree: true });
+      migrateNativePropaganda();
       window.addEventListener("fx-lobby-notification", handleLobbyNotification);
       window.addEventListener("fx-game-language-change", handleGameLanguageChange);
-      const nativeHistory = window.__fx?.getLobbyNotificationHistory?.() ?? [];
+      let nativeHistory = [];
+      try {
+        const history = window.__fx?.getLobbyNotificationHistory?.();
+        nativeHistory = Array.isArray(history) ? history : [];
+      } catch (error) {
+        console.warn("[ZFX Client LobbyView] Native notification history is not ready yet:", error);
+      }
       lobbyNotifications.value = nativeHistory.filter(item => item && item.id !== 6 && item.text)
         .slice(-100)
         .map(item => {
@@ -1271,6 +1362,10 @@ const LobbyView = defineComponent({
       window.removeEventListener("fx-native-lobby-return", handleNativeLobbyReturn);
       window.removeEventListener("fx-lobby-notification", handleLobbyNotification);
       window.removeEventListener("fx-game-language-change", handleGameLanguageChange);
+      if (window.__fx?.showPropagandaInVue === showPropagandaInVue) delete window.__fx.showPropagandaInVue;
+      nativePropagandaObserver?.disconnect();
+      nativePropagandaObserver = null;
+      closePropagandaMessage();
       unsubscribe();
       unsubscribeLobbyChat();
       restoreNativeRoot();
@@ -1280,6 +1375,7 @@ const LobbyView = defineComponent({
     return {
       active, labels, snapshot, lobbyRating, scale, query, sortBy, readyFilter, affiliationFilter, filteredPlayers, filteredTeamPlayers, clanGroups, topReadyClan, readyClanSlices, readyClanTotal, activeTab,
       lobbyNotifications, notificationIndex, notificationPanelOpen, currentLobbyNotification,
+      propagandaDialog, propagandaMessage, closePropagandaMessage,
       previousLobbyNotification, nextLobbyNotification,
       ownClan, clanPlayers, clanReadyCount, teamCount, clanCount, playerCountLabel, onlyReadyClans, visibleClanGroups, chatStatus, activeMode, isTeamMode,
       playerContextMenu, playerListComponent, mentionPlayerFromContextMenu,
@@ -1309,6 +1405,11 @@ const LobbyView = defineComponent({
   template: `
     <section v-if="active" id="fx-custom-lobby-view" class="fx-custom-lobby" :style="{ '--fx-custom-lobby-scale': scale }" :aria-label="labels.title">
       <Teleport to="body">
+      <dialog ref="propagandaDialog" class="fx-lobby-propaganda-dialog" :style="propagandaMessage?.style" aria-label="Propaganda message" @cancel.prevent="closePropagandaMessage" @click.self="closePropagandaMessage">
+        <header><span>PROPAGANDA</span><button type="button" :aria-label="labels.dismiss" @click="closePropagandaMessage">×</button></header>
+        <p>{{ propagandaMessage?.text }}</p>
+        <footer><button type="button" @click="closePropagandaMessage">{{ labels.dismiss }}</button></footer>
+      </dialog>
       <aside v-if="notificationPanelOpen && currentLobbyNotification" class="fx-lobby-notifications" aria-live="polite" aria-label="Lobby-Benachrichtigungen">
         <div class="fx-lobby-notification-controls">
           <button type="button" :disabled="notificationIndex <= 0" aria-label="Vorherige Meldung" @click="previousLobbyNotification">◀</button>
@@ -1382,8 +1483,17 @@ export function initializeCustomLobbyView() {
   let routeTimer = 0;
   const getTargetRoute = () => {
     const gameState = window.__fx?.getGameVar?.("gameState");
-    const inGame = gameState === 1;
+    const nativeMenuState = Number(window.__fx?.nativeMenuState);
     const currentLobbyRoot = findLobbyRoot(shell);
+    const lobbyRootStyle = currentLobbyRoot ? getComputedStyle(currentLobbyRoot) : null;
+    const nativeLobbyVisible = Boolean(currentLobbyRoot?.getClientRects().length
+      && lobbyRootStyle?.display !== "none"
+      && lobbyRootStyle?.visibility !== "hidden"
+      && Number(lobbyRootStyle?.opacity ?? 1) > 0);
+    const nativeLobbyConfirmed = nativeMenuState === 0
+      && (nativeLobbyReturnPending || customLobbyReturnLatched || previousGameState === 1)
+      || (nativeLobbyVisible && (nativeLobbyReturnPending || customLobbyReturnLatched || previousGameState === 1));
+    const inGame = gameState === 1 && !nativeLobbyConfirmed;
     const returnedToLobby = nativeLobbySuppressionRoot
       && (!nativeLobbySuppressionRoot.isConnected
         || (currentLobbyRoot && currentLobbyRoot !== nativeLobbySuppressionRoot));
@@ -1421,6 +1531,7 @@ export function initializeCustomLobbyView() {
         to: target,
         enabled: window.__fx?.settings?.customLobbyView,
         gameState: window.__fx?.getGameVar?.("gameState"),
+        nativeMenuState: window.__fx?.nativeMenuState,
       });
       router.replace(target).catch(error => console.error("[ZFX Client] View route update failed:", error));
     }
@@ -1463,6 +1574,7 @@ export function initializeCustomLobbyView() {
       nativeLobbyReturnUntil = 0;
       return;
     }
+    syncRoute();
     let attempts = 0;
     const restoreLobby = () => {
       if (window.__fx?.settings?.customLobbyView === false || attempts++ >= 24) {
@@ -1510,6 +1622,7 @@ export function initializeCustomLobbyView() {
     if (nextState === 0 && previousState !== 0 && !nativeLobbyReturnPending) {
       window.__fx.onGameReturnedToLobby?.();
     }
+    if (nextState === 0 && window.__fx?.settings?.customLobbyView !== false) syncRoute();
     if (!classicSessionDisabled) return;
     const returnedToOriginalLobbyState = nativeLobbySuppressionReturnState !== null
       && nextState === nativeLobbySuppressionReturnState;
